@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofBoard — Job Database</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; color: #111; }
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+.header { display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 20px; flex-wrap: wrap; gap: 8px; }
+.logo { font-size: 18px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+.logo span { color: #185FA5; }
+.header-tag { font-size: 12px; font-weight: 700; color: #fff; background: #185FA5; padding: 3px 11px; border-radius: 12px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; display: inline-block; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+.user-chip { font-size: 12px; color: #555; background: #f0f0ec; padding: 4px 10px; border-radius: 10px; display: flex; align-items: center; gap: 5px; }
+.role-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; }
+.role-admin        { background: #DEEDFB; color: #0C447C; }
+.role-scheduler    { background: #E8E6FD; color: #3C3489; }
+.role-office_staff { background: #DCF0CC; color: #27500A; }
+.role-sales        { background: #F8E9C8; color: #633806; }
+.toolbar { background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 160px; }
+.search-wrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none; }
+.search-input { width: 100%; padding: 7px 10px 7px 30px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; }
+.search-input:focus { border-color: #185FA5; background: #fff; }
+select.flt { padding: 7px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; cursor: pointer; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; border: none; cursor: pointer; white-space: nowrap; }
+.btn-primary { background: #185FA5; color: #fff; }
+.btn-primary:hover { background: #124d8a; }
+.btn-ghost { background: #f0f0ec; color: #444; border: 0.5px solid #ccc; }
+.btn-ghost:hover { background: #e8e8e4; }
+.stat-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.stat-pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; }
+.table-wrap { flex: 1; overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead { position: sticky; top: 0; z-index: 10; }
+th { background: #f0f0ec; border-bottom: 1px solid #ddd; padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; cursor: pointer; user-select: none; }
+th:hover { color: #555; }
+td { padding: 8px 12px; border-bottom: 0.5px solid #eee; vertical-align: middle; white-space: nowrap; }
+tr:hover td { background: #f8f8f5; cursor: pointer; }
+.no-data { text-align: center; padding: 60px 20px; color: #bbb; }
+.no-data i { font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.3; }
+.job-num { font-weight: 800; color: #185FA5; }
+.cust-name { font-weight: 600; }
+.addr-cell { color: #888; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.icon-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #ddd; background: #f8f8f5; color: #666; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+.icon-btn:hover { background: #fff; color: #111; }
+.icon-btn.del:hover { background: #FDE6D8; color: #D85A30; border-color: #E8856A; }
+.actions { display: flex; gap: 4px; }
+.board-dots { display: flex; gap: 3px; align-items: center; }
+.board-dot { width: 8px; height: 8px; border-radius: 50%; }
+.bd-removal { background: #D85A30; }
+.bd-install  { background: #185FA5; }
+.bd-gutters  { background: #1D9E75; }
+.bd-off      { background: #e0e0e0; }
+.pager { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #fff; border-top: 0.5px solid #eee; font-size: 12px; color: #888; }
+.page-btns { display: flex; gap: 4px; }
+.page-btn { min-width: 28px; height: 28px; padding: 0 6px; border-radius: 6px; border: 0.5px solid #ddd; background: #f8f8f5; color: #555; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 600; }
+.page-btn:hover { background: #fff; }
+.page-btn.active { background: #185FA5; color: #fff; border-color: #185FA5; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; width: 680px; max-width: 98vw; margin: auto; }
+.modal-hdr { padding: 16px 20px; border-bottom: 0.5px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 15px; font-weight: 700; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 80vh; overflow-y: auto; }
+.modal-ftr { padding: 14px 20px; border-top: 0.5px solid #eee; display: flex; justify-content: flex-end; gap: 8px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1/-1; }
+label.lbl { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+input.fi, select.fi, textarea.fi { padding: 8px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; color: #111; outline: none; width: 100%; }
+input.fi:focus, select.fi:focus, textarea.fi:focus { border-color: #185FA5; }
+input.fi:disabled, select.fi:disabled, textarea.fi:disabled { background: #f8f8f5; color: #aaa; cursor: not-allowed; }
+textarea.fi { resize: vertical; min-height: 58px; }
+.sec-div { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.sec-div.blue   { background: #EAF2FB; color: #185FA5; }
+.sec-div.green  { background: #EAF7F2; color: #0F6E56; }
+.sec-div.orange { background: #FEF0E6; color: #894020; }
+.sec-div.purple { background: #F0EBF8; color: #5A3F88; }
+.sec-div.gray   { background: #f0f0ec; color: #666; }
+.locked-notice { font-size: 11px; color: #aaa; font-style: italic; display: flex; align-items: center; gap: 4px; }
+.sched-box { background: #F8F9FA; border: 0.5px solid #e4e4e0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.sched-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.sched-item { display: flex; flex-direction: column; gap: 4px; }
+.sched-board-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+.sched-board-dot { width: 7px; height: 7px; border-radius: 50%; }
+.layer-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lc-btn { width: 26px; height: 26px; border-radius: 6px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+.lc-btn:disabled { opacity: 0.3; cursor: default; }
+.lc-num { font-size: 14px; font-weight: 700; min-width: 16px; text-align: center; }
+.layer-rows { display: flex; flex-direction: column; gap: 4px; }
+.layer-row-item { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.layer-pos-lbl { font-size: 11px; color: #999; text-align: right; padding-right: 4px; }
+.layer-arrow-row { padding: 1px 0 1px 98px; color: #ccc; font-size: 11px; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
+.check-row input { width: 15px; height: 15px; accent-color: #185FA5; }
+.check-row.disabled { color: #bbb; cursor: not-allowed; }
+.drawer-overlay { display: none; position: fixed; inset: 0; z-index: 100; }
+.drawer-overlay.open { display: flex; }
+.drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.3); }
+.drawer { position: absolute; right: 0; top: 0; bottom: 0; width: 440px; max-width: 96vw; background: #fff; border-left: 0.5px solid #e0e0e0; overflow-y: auto; display: flex; flex-direction: column; }
+.drawer-hdr { padding: 16px 20px; border-bottom: 0.5px solid #eee; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: 0; background: #fff; z-index: 1; }
+.drawer-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.d-sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #aaa; padding-bottom: 6px; border-bottom: 0.5px solid #eee; margin-top: 4px; }
+.d-field { display: flex; flex-direction: column; gap: 3px; }
+.d-lbl { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; }
+.d-val { font-size: 13px; color: #222; line-height: 1.5; white-space: pre-line; }
+.board-list { display: flex; flex-direction: column; gap: 6px; }
+.board-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 7px 10px; border-radius: 7px; }
+.board-item.active { font-weight: 600; }
+.board-item.inactive { color: #bbb; background: #f8f8f5; }
+.board-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.insp-row-g { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: center; background: #f8f8f5; border-radius: 7px; padding: 7px 9px; border: 0.5px solid #eee; margin-bottom: 4px; }
+.add-btn-sm { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #185FA5; background: #E6F1FB; border: none; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-family: inherit; }
+.add-btn-sm:hover { background: #d0e8f8; }
+.add-btn-sm:disabled { opacity: 0.35; cursor: not-allowed; }
+.save-btn-full { width: 100%; padding: 9px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 8px; }
+.insp-tearoff    { background: #FDE6D8; color: #712B13; }
+.insp-nailing    { background: #E8E6FD; color: #3C3489; }
+.insp-inprogress { background: #FAEEDA; color: #633806; }
+.insp-final      { background: #DCF0CC; color: #27500A; }
+.toggle-wrap { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+.tog-slider:before { content:''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.toggle-wrap input:checked ~ .tog-slider { background: #7B5EA7; }
+.toggle-wrap input:checked ~ .tog-slider:before { transform: translateX(16px); }
+.warranty-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #5A3F88; background: #EDE6F7; border: 1px solid #C9B8E8; padding: 3px 10px; border-radius: 10px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">Roof<span>Board</span></div>
+    <span class="header-tag">Job Database</span>
+  </div>
+  <div class="header-right">
+    <span class="live-dot"></span>
+    <div class="user-chip">
+      <span id="user-name"></span>
+      <span class="role-tag" id="role-tag"></span>
+    </div>
+    <button class="btn btn-ghost" id="users-btn" onclick="window.location.href='roofboard_users.html'" style="display:none"><i class="ti ti-users"></i> Users</button>
+    <button class="btn btn-ghost" onclick="logout()"><i class="ti ti-logout"></i> Sign out</button>
+    <button class="btn btn-primary" id="add-job-btn" onclick="openAdd()" style="display:none"><i class="ti ti-plus"></i> Add Job</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <i class="ti ti-search"></i>
+    <input type="text" class="search-input" id="q" placeholder="Search job #, customer, address…" oninput="applyFilter()">
+  </div>
+  <select class="flt" id="f-status" onchange="applyFilter()">
+    <option value="">All jobs</option>
+    <option value="backlog">Backlog (unscheduled)</option>
+    <option value="scheduled">Scheduled</option>
+  </select>
+  <select class="flt" id="f-type" onchange="applyFilter()">
+    <option value="">All types</option>
+    <option value="comp">Comp</option>
+    <option value="tile">Tile</option>
+    <option value="metal">Metal</option>
+    <option value="wood">Wood</option>
+    <option value="flat">Flat/TPO</option>
+    <option value="polymer">Polymer</option>
+    <option value="other">Other</option>
+    <option value="gutters_only">Gutters Only</option>
+    <option value="repairs">Repairs</option>
+  </select>
+  <select class="flt" id="f-crew" onchange="applyFilter()">
+    <option value="">All crews</option>
+    <option value="__none">Unassigned</option>
+    <option value="gutter">Gutter Crew</option>
+    <option value="removal">Removal Crew</option>
+    <option value="1">Install Crew 1</option>
+    <option value="2">Install Crew 2</option>
+    <option value="3">Install Crew 3</option>
+    <option value="4">Install Crew 4</option>
+    <option value="5">Install Crew 5</option>
+    <option value="6">Install Crew 6</option>
+    <option value="7">Install Crew 7</option>
+    <option value="8">Install Crew 8</option>
+  </select>
+  <div class="stat-pills" id="stats"></div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('jobNum')">Job # <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('customer')">Customer <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('address')">Address <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('type')">Type <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('crew')">Crew <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('tearoffDate')">Tear-off <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('installDate')">Install <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('gutterDate')">Gutters <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th>Boards</th>
+        <th>Flags</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="no-data" id="nodata" style="display:none;">
+    <i class="ti ti-database-off"></i>
+    No jobs yet — click Add Job to get started.
+  </div>
+</div>
+<div class="pager" id="pager"></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="job-modal" onclick="maybeClose(event,'job-modal')">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">Add Job</div>
+      <button class="icon-btn" onclick="closeModal('job-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="eid">
+
+      <div class="sec-div blue"><i class="ti ti-briefcase" style="font-size:11px"></i> Job information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">Job Number *</label>
+          <input type="text" class="fi" id="f-num" placeholder="#10001">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Roof Type *</label>
+          <select class="fi" id="f-type-input">
+            <option value="comp">Comp</option>
+            <option value="tile">Tile</option>
+            <option value="metal">Metal</option>
+            <option value="wood">Wood</option>
+            <option value="flat">Flat / TPO</option>
+            <option value="polymer">Polymer</option>
+            <option value="other">Other</option>
+            <option value="gutters_only">Gutters Only</option>
+            <option value="repairs">Repairs</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Customer Name *</label>
+        <input type="text" class="fi" id="f-cust" placeholder="Johnson Residence">
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Address</label>
+        <input type="text" class="fi" id="f-addr" placeholder="1402 Maple Dr, Sacramento, 95814">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">Crew Assignment</label>
+          <select class="fi" id="f-crew-input">
+            <option value="">Unassigned</option>
+            <option value="gutter">Gutter Crew</option>
+            <option value="removal">Removal Crew</option>
+            <option value="1">Install Crew 1</option>
+            <option value="2">Install Crew 2</option>
+            <option value="3">Install Crew 3</option>
+            <option value="4">Install Crew 4</option>
+            <option value="5">Install Crew 5</option>
+            <option value="6">Install Crew 6</option>
+            <option value="7">Install Crew 7</option>
+            <option value="8">Install Crew 8</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Duration</label>
+          <select class="fi" id="f-dur">
+            <option value="Half day">Half day</option>
+            <option value="1 day">1 day</option>
+            <option value="2 days">2 days</option>
+            <option value="3 days">3 days</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec-div orange"><i class="ti ti-stack-2" style="font-size:11px"></i> Roof layers (top → bottom)</div>
+      <div class="form-group full">
+        <div class="layer-ctrl">
+          <span style="font-size:12px;color:#888;">Layers:</span>
+          <button class="lc-btn" id="lc-minus" onclick="changeFormLayerCount(-1)">−</button>
+          <span class="lc-num" id="lc-num">1</span>
+          <button class="lc-btn" id="lc-plus" onclick="changeFormLayerCount(1)">+</button>
+        </div>
+        <div class="layer-rows" id="layer-rows-form"></div>
+      </div>
+
+      <div class="sec-div gray"><i class="ti ti-file-text" style="font-size:11px"></i> Materials & notes</div>
+      <div class="form-group full">
+        <label class="lbl">Roofing Materials</label>
+        <textarea class="fi" id="f-mat" placeholder="30sq GAF Timberline HDZ, synthetic felt…"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Notes</label>
+        <textarea class="fi" id="f-notes" placeholder="Gate code: 4821, dog in backyard…"></textarea>
+      </div>
+
+      <div class="sec-div green"><i class="ti ti-droplet" style="font-size:11px"></i> Gutter details</div>
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="lbl">Gutter Profile</label>
+          <select class="fi" id="f-gprofile">
+            <option value="">None</option>
+            <option value="5.5_fascia">5½" Fascia</option>
+            <option value="5.5_curved_fascia">5½" Curved Fascia</option>
+            <option value="5_ogee">5" Ogee</option>
+            <option value="6_ogee">6" Ogee</option>
+            <option value="7.5_fascia">7½" Fascia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Gutter Material</label>
+          <select class="fi" id="f-gmaterial">
+            <option value="">N/A</option>
+            <option value="aluminum">Aluminum</option>
+            <option value="steel">Steel</option>
+            <option value="bonderized">Bonderized</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Gutter Instruction</label>
+          <select class="fi" id="f-ginstr">
+            <option value="na">N/A</option>
+            <option value="remove">Remove gutters</option>
+            <option value="keep">Keep gutters</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">Gutter Screen (optional)</label>
+          <input type="text" class="fi" id="f-gscreen" placeholder="e.g. LeafGuard Pro…">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Gutter Materials / Notes</label>
+          <input type="text" class="fi" id="f-gmat" placeholder="80ft, 4 downspouts…">
+        </div>
+      </div>
+
+      <div class="sec-div purple"><i class="ti ti-toggle-right" style="font-size:11px"></i> Flags</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label class="check-row" id="chk-gutters-row"><input type="checkbox" id="f-incgutters"> Includes gutters with reroof (+G)</label>
+        <label class="check-row" id="chk-warranty-row"><input type="checkbox" id="f-warranty"> Extended manufacturer's warranty (★)</label>
+        <label class="check-row" id="chk-rf-row"><input type="checkbox" id="f-rfcomplete"> Reroof complete — gutters ready (✓)</label>
+      </div>
+
+      <div class="sec-div blue"><i class="ti ti-calendar" style="font-size:11px"></i> Scheduling</div>
+      <div class="sched-box" id="sched-box">
+        <div style="font-size:11px;color:#888;line-height:1.5;" id="sched-hint">Leave dates blank when creating a new job. Fill in later to assign to boards.</div>
+        <div class="sched-row">
+          <div class="sched-item">
+            <div class="sched-board-label"><span class="sched-board-dot" style="background:#D85A30"></span>Removal board</div>
+            <label class="lbl">Tear-off Date</label>
+            <input type="date" class="fi" id="f-tearoff">
+            <div style="font-size:10px;color:#aaa;margin-top:3px;">Blank = backlog</div>
+          </div>
+          <div class="sched-item">
+            <div class="sched-board-label"><span class="sched-board-dot" style="background:#185FA5"></span>Install board</div>
+            <label class="lbl">Install Date</label>
+            <input type="date" class="fi" id="f-install">
+          </div>
+          <div class="sched-item">
+            <div class="sched-board-label"><span class="sched-board-dot" style="background:#1D9E75"></span>Gutter board</div>
+            <label class="lbl">Gutter Date</label>
+            <input type="date" class="fi" id="f-gutter">
+          </div>
+        </div>
+      </div>
+
+      <div id="f-err" style="color:#D85A30;font-size:12px;font-weight:600;display:none;"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal('job-modal')">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveJob()">
+        <i class="ti ti-device-floppy"></i> Save Job
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Drawer -->
+<div class="drawer-overlay" id="drawer">
+  <div class="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div class="drawer">
+    <div class="drawer-hdr">
+      <div>
+        <div style="font-size:16px;font-weight:700;" id="d-name"></div>
+        <div style="font-size:13px;font-weight:800;color:#185FA5;margin-top:2px;" id="d-num"></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="icon-btn" id="d-edit-btn" onclick="editFromDrawer()" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div id="d-badges" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div class="d-sec">Active boards</div>
+      <div class="board-list" id="d-boards"></div>
+      <div class="d-sec">Job details</div>
+      <div class="d-field"><div class="d-lbl"><i class="ti ti-map-pin" style="font-size:10px"></i> Address</div><div class="d-val" id="d-addr"></div></div>
+      <div class="d-field"><div class="d-lbl"><i class="ti ti-clock" style="font-size:10px"></i> Duration</div><div class="d-val" id="d-dur"></div></div>
+      <div class="d-field"><div class="d-lbl"><i class="ti ti-stack-2" style="font-size:10px"></i> Roof layers</div><div class="d-val" id="d-layers"></div></div>
+      <div class="d-field"><div class="d-lbl"><i class="ti ti-package" style="font-size:10px"></i> Materials</div><div class="d-val" id="d-mat"></div></div>
+      <div class="d-field"><div class="d-lbl"><i class="ti ti-notes" style="font-size:10px"></i> Notes</div><div class="d-val" id="d-notes"></div></div>
+      <div class="d-sec">Gutter details</div>
+      <div class="d-field"><div class="d-lbl">Profile &amp; material</div><div class="d-val" id="d-gprofile"></div></div>
+      <div class="d-field" id="d-gscreen-f" style="display:none;"><div class="d-lbl">Screen</div><div class="d-val" id="d-gscreen"></div></div>
+      <div class="d-field"><div class="d-lbl">Instruction</div><div class="d-val" id="d-ginstr"></div></div>
+      <div class="d-sec">Schedule</div>
+      <div class="d-field"><div class="d-val" id="d-dates"></div></div>
+      <!-- Notes edit for sales role -->
+      <div id="sales-notes-edit" style="display:none;">
+        <div class="d-sec">Edit notes</div>
+        <textarea class="fi" id="sales-notes-input" style="min-height:80px;font-size:13px;" placeholder="Add notes…"></textarea>
+        <button class="save-btn-full" onclick="saveSalesNotes()" style="background:#185FA5;color:#fff;margin-top:8px;">
+          <i class="ti ti-device-floppy"></i> Save notes
+        </button>
+        <div id="sales-notes-saved" style="font-size:12px;color:#1D9E75;font-weight:600;text-align:center;margin-top:6px;display:none;">✓ Saved</div>
+      </div>
+      <!-- Inspections -->
+      <div class="d-sec" id="insp-sec-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <span><i class="ti ti-clipboard-check" style="color:#F5A623;margin-right:4px"></i>Inspections</span>
+        <button class="add-btn-sm" id="add-insp-btn" onclick="addInsp()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+      </div>
+      <div id="insp-list"></div>
+      <div id="no-insp" style="font-size:12px;color:#bbb;font-style:italic;">No inspections yet.</div>
+      <button class="save-btn-full" id="save-insp-btn" onclick="saveInsps()" style="display:none;background:#185FA5;color:#fff;">
+        <i class="ti ti-device-floppy"></i> Save inspections
+      </button>
+      <div id="insp-saved" style="font-size:12px;color:#1D9E75;font-weight:600;text-align:center;margin-top:6px;display:none;">✓ Saved</div>
+      <!-- Warranty -->
+      <div id="warranty-sec" style="display:none;">
+        <div class="d-sec" style="display:flex;align-items:center;justify-content:space-between;">
+          <span><i class="ti ti-rosette" style="color:#7B5EA7;margin-right:4px"></i>Extended Warranty</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="warranty-chk" onchange="toggleWarranty(this.checked)">
+            <span class="tog-slider"></span>
+          </label>
+        </div>
+        <div id="warranty-badge" class="warranty-badge" style="display:none;">
+          <i class="ti ti-circle-check" style="font-size:12px"></i> Extended warranty included
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const API = 'https://YOUR-APP.railway.app';
+
+// ── Auth ──────────────────────────────────────────────────────
+function getToken(){ return localStorage.getItem('rb_token'); }
+function getRole() { return localStorage.getItem('rb_role'); }
+function getName() { return localStorage.getItem('rb_name'); }
+
+// Role permission helpers
+const role = getRole();
+const canAdd    = ['admin','scheduler','office_staff'].includes(role);
+const canEdit   = ['admin','scheduler','office_staff'].includes(role);
+const canDates  = ['admin','scheduler'].includes(role);
+const canDelete = role === 'admin';
+const canUsers  = role === 'admin';
+const salesOnly = role === 'sales';
+
+async function authFetch(method, path, body){
+  const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  if(r.status===401){ logout(); throw new Error('Unauth'); }
+  return r;
+}
+
+function logout(){
+  try { fetch(API+'/api/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}}); } catch(e){}
+  localStorage.removeItem('rb_token');
+  localStorage.removeItem('rb_role');
+  localStorage.removeItem('rb_name');
+  localStorage.removeItem('rb_expires');
+  window.location.href='roofboard_login.html';
+}
+
+// ── Constants ─────────────────────────────────────────────────
+const JOB_TYPES = {
+  comp:{label:'Comp',bg:'#DEEDFB',text:'#0C447C',border:'#185FA5'},
+  tile:{label:'Tile',bg:'#E8E6FD',text:'#3C3489',border:'#534AB7'},
+  metal:{label:'Metal',bg:'#E8E7E1',text:'#444441',border:'#888780'},
+  wood:{label:'Wood',bg:'#F8E9C8',text:'#633806',border:'#BA7517'},
+  flat:{label:'Flat/TPO',bg:'#FAE0E0',text:'#791F1F',border:'#E24B4A'},
+  polymer:{label:'Polymer',bg:'#DCF0CC',text:'#27500A',border:'#639922'},
+  other:{label:'Other',bg:'#F8E2ED',text:'#72243E',border:'#993556'},
+  gutters_only:{label:'Gutters Only',bg:'#C8EEE0',text:'#085041',border:'#1D9E75'},
+  repairs:{label:'Repairs',bg:'#FDE6D8',text:'#712B13',border:'#D85A30'},
+};
+const REROOF = ['comp','tile','metal','wood','flat','polymer','other'];
+const LAYER_MATS = [
+  {v:'comp',l:'Comp'},{v:'tile',l:'Tile'},{v:'metal',l:'Metal'},
+  {v:'wood',l:'Wood'},{v:'flat',l:'Flat/TPO'},{v:'polymer',l:'Polymer'},{v:'other',l:'Other'}
+];
+const GUTTER_PROFILES = {
+  '5.5_fascia':{label:'5½" Fascia',short:'5½F'},
+  '5.5_curved_fascia':{label:'5½" Curved Fascia',short:'5½CF'},
+  '5_ogee':{label:'5" Ogee',short:'5OG'},
+  '6_ogee':{label:'6" Ogee',short:'6OG'},
+  '7.5_fascia':{label:'7½" Fascia',short:'7½F'},
+};
+const GUTTER_MATERIALS = {
+  aluminum:{label:'Aluminum',short:'AL'},
+  steel:{label:'Steel',short:'STL'},
+  bonderized:{label:'Bonderized',short:'BND'},
+};
+const INSP_TYPES = [
+  {v:'tearoff',l:'Tear-off'},{v:'nailing',l:'Nailing'},
+  {v:'inprogress',l:'In-progress'},{v:'final',l:'Final'},
+];
+const CREW_BG=['#DEEDFB','#C8EEE0','#F8E9C8','#F8E2ED','#FAE0E0','#E8E6FD','#D5F0E8','#DCF0CC'];
+const CREW_TX=['#0C447C','#085041','#633806','#72243E','#791F1F','#3C3489','#0F6E56','#27500A'];
+const PG=25;
+
+// ── State ─────────────────────────────────────────────────────
+let jobs=[],filtered=[],pg=1,sf='jobNum',sd=1,did=null,drawerInsps=[];
+let formLayers=['comp'];
+
+// ── Load & poll ───────────────────────────────────────────────
+async function loadJobs(){
+  try {
+    const r=await fetch(API+'/api/jobs');
+    jobs=await r.json();
+    applyFilter();
+  } catch(e){ console.error('Load failed',e); }
+}
+setInterval(loadJobs,30000);
+
+// ── Board routing ─────────────────────────────────────────────
+function onInstallBoard(j){ return !!(j.installDate&&j.crew&&!['gutter','removal',''].includes(j.crew)); }
+function onGutterBoard(j) { return !!j.gutterDate; }
+function isBacklog(j)     { return !j.tearoffDate; }
+
+// ── Helpers ───────────────────────────────────────────────────
+function fmtD(d){ if(!d)return'—'; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?d:dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function typeBadge(t){ const d=JOB_TYPES[t]; return d?`<span class="badge" style="background:${d.bg};color:${d.text}">${d.label}</span>`:t; }
+function crewLabel(c){
+  if(!c) return '<span class="badge" style="background:#f0f0ec;color:#aaa">Unassigned</span>';
+  if(c==='gutter') return '<span class="badge" style="background:#C8EEE0;color:#085041">Gutter Crew</span>';
+  if(c==='removal') return '<span class="badge" style="background:#FDE6D8;color:#712B13">Removal Crew</span>';
+  const n=parseInt(c)-1;
+  if(n>=0&&n<8) return `<span class="badge" style="background:${CREW_BG[n]};color:${CREW_TX[n]}">Crew ${c}</span>`;
+  return `<span class="badge">${c}</span>`;
+}
+function layerSummary(stack){
+  if(!stack||!stack.length) return '—';
+  if(stack.length===1){ const m=LAYER_MATS.find(x=>x.v===stack[0]); return m?m.l:'1 layer'; }
+  return stack.map((v,i)=>{ const m=LAYER_MATS.find(x=>x.v===v); const pos=i===0?'Top':i===stack.length-1?'Bottom':`Layer ${i+1}`; return `${pos}: ${m?m.l:v}`; }).join('\n');
+}
+
+// ── Filter / sort ─────────────────────────────────────────────
+function applyFilter(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const fst=document.getElementById('f-status').value;
+  const ftp=document.getElementById('f-type').value;
+  const fcr=document.getElementById('f-crew').value;
+  filtered=jobs.filter(j=>{
+    if(q&&!`${j.jobNum} ${j.customer} ${j.address}`.toLowerCase().includes(q))return false;
+    if(fst==='backlog'&&!isBacklog(j))return false;
+    if(fst==='scheduled'&&isBacklog(j))return false;
+    if(ftp&&j.type!==ftp)return false;
+    if(fcr==='__none'&&j.crew)return false;
+    if(fcr&&fcr!=='__none'&&j.crew!==fcr)return false;
+    return true;
+  });
+  filtered.sort((a,b)=>{ let av=a[sf]||'',bv=b[sf]||''; if(typeof av==='string')av=av.toLowerCase(); if(typeof bv==='string')bv=bv.toLowerCase(); return av<bv?-sd:av>bv?sd:0; });
+  pg=1; renderTable();
+}
+function sortBy(f){ sf===f?sd*=-1:(sf=f,sd=1); applyFilter(); }
+function goPage(p){ pg=p; renderTable(); }
+
+function renderTable(){
+  const s=(pg-1)*PG, page=filtered.slice(s,s+PG);
+  document.getElementById('nodata').style.display=page.length?'none':'block';
+  document.getElementById('tbody').innerHTML=page.map(j=>{
+    const layers=j.layerStack||[];
+    const backlog=isBacklog(j);
+    const boards=`<div class="board-dots">
+      <div class="board-dot ${backlog?'bd-off':'bd-removal'}" title="${backlog?'Removal: backlog':'Removal: scheduled'}"></div>
+      <div class="board-dot ${onInstallBoard(j)?'bd-install':'bd-off'}" title="Install board"></div>
+      <div class="board-dot ${onGutterBoard(j)?'bd-gutters':'bd-off'}" title="Gutter board"></div>
+    </div>`;
+    const flags=`
+      ${j.includesGutters?'<span style="font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;background:#D5F0E8;color:#0F6E56">+G</span> ':''}
+      ${layers.length>1?`<span style="font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;background:#F8E9C8;color:#633806">${layers.length}L</span> `:''}
+      ${j.warranty?'<span style="font-size:10px;font-weight:900;color:#7B5EA7">★</span>':''}`;
+    const editBtn=canEdit?`<div class="icon-btn" onclick="openEdit('${j.id}')" title="Edit"><i class="ti ti-edit"></i></div>`:'';
+    const delBtn=canDelete?`<div class="icon-btn del" onclick="delJob('${j.id}')" title="Delete"><i class="ti ti-trash"></i></div>`:'';
+    return `<tr onclick="openDrawer('${j.id}')">
+      <td><span class="job-num">${j.jobNum||'—'}</span></td>
+      <td><span class="cust-name">${j.customer||'—'}</span></td>
+      <td><span class="addr-cell" title="${j.address||''}">${j.address||'—'}</span></td>
+      <td>${typeBadge(j.type)}</td>
+      <td>${crewLabel(j.crew)}</td>
+      <td>${fmtD(j.tearoffDate)}</td>
+      <td>${fmtD(j.installDate)}</td>
+      <td>${fmtD(j.gutterDate)}</td>
+      <td>${boards}</td>
+      <td>${flags}</td>
+      <td onclick="event.stopPropagation()"><div class="actions">${editBtn}${delBtn}</div></td>
+    </tr>`;
+  }).join('');
+
+  const bl=filtered.filter(isBacklog).length, sc=filtered.length-bl;
+  document.getElementById('stats').innerHTML=`
+    <span class="stat-pill" style="background:#f0f0ec;color:#555">${filtered.length} jobs</span>
+    ${bl?`<span class="stat-pill" style="background:#FDE6D8;color:#712B13">${bl} backlog</span>`:''}
+    ${sc?`<span class="stat-pill" style="background:#D5F0E8;color:#085041">${sc} scheduled</span>`:''}`;
+
+  const total=filtered.length,pages=Math.ceil(total/PG);
+  if(pages<=1){ document.getElementById('pager').innerHTML=`<span>${total} job${total!==1?'s':''}</span><span></span>`; }
+  else {
+    let btns='';
+    for(let p=1;p<=pages;p++){
+      if(p===1||p===pages||Math.abs(p-pg)<=1) btns+=`<div class="page-btn${p===pg?' active':''}" onclick="goPage(${p})">${p}</div>`;
+      else if(Math.abs(p-pg)===2) btns+=`<div style="padding:0 4px;line-height:28px">…</div>`;
+    }
+    const a=(pg-1)*PG+1,b=Math.min(pg*PG,total);
+    document.getElementById('pager').innerHTML=`<span>Showing ${a}–${b} of ${total}</span><div class="page-btns">${btns}</div>`;
+  }
+}
+
+// ── Layer stack form ──────────────────────────────────────────
+function renderFormLayers(){
+  const count=formLayers.length;
+  document.getElementById('lc-num').textContent=count;
+  document.getElementById('lc-minus').disabled=count<=1;
+  document.getElementById('lc-plus').disabled=count>=4;
+  document.getElementById('layer-rows-form').innerHTML=formLayers.map((mat,i)=>{
+    const isTop=i===0,isBot=i===count-1;
+    const pos=count===1?'Only layer':isTop?'Top layer':isBot?'Bottom layer':`Layer ${i+1}`;
+    const arrow=i>0?`<div class="layer-arrow-row"><i class="ti ti-arrow-down"></i></div>`:'';
+    const opts=LAYER_MATS.map(m=>`<option value="${m.v}"${m.v===mat?' selected':''}>${m.l}</option>`).join('');
+    return `${arrow}<div class="layer-row-item">
+      <div class="layer-pos-lbl">${pos}</div>
+      <select class="fi" style="font-size:12px;padding:6px 8px;" onchange="formLayers[${i}]=this.value">${opts}</select>
+    </div>`;
+  }).join('');
+}
+function changeFormLayerCount(dir){
+  if(dir===1&&formLayers.length<4) formLayers.push('comp');
+  else if(dir===-1&&formLayers.length>1) formLayers.pop();
+  renderFormLayers();
+}
+
+// ── Lock form fields by role ──────────────────────────────────
+function applyFormPermissions(isEdit){
+  // Office staff cannot edit scheduling dates
+  const datesLocked = isEdit && !canDates;
+  ['f-tearoff','f-install','f-gutter'].forEach(id=>{
+    document.getElementById(id).disabled=datesLocked;
+  });
+  // Show locked notice in sched box if dates locked
+  const hint=document.getElementById('sched-hint');
+  if(datesLocked){
+    hint.innerHTML='<i class="ti ti-lock" style="font-size:12px;color:#aaa"></i> Scheduling dates can only be edited by Admin or Scheduler roles.';
+    hint.style.color='#aaa';
+  } else {
+    hint.textContent='Leave dates blank when creating a new job. Fill in later to assign to boards.';
+    hint.style.color='#888';
+  }
+}
+
+// ── Add / Edit ────────────────────────────────────────────────
+function clearForm(){
+  document.getElementById('eid').value='';
+  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type-input').value='comp';
+  document.getElementById('f-crew-input').value='';
+  document.getElementById('f-dur').value='1 day';
+  document.getElementById('f-gprofile').value='';
+  document.getElementById('f-gmaterial').value='';
+  document.getElementById('f-ginstr').value='na';
+  document.getElementById('f-tearoff').value='';
+  document.getElementById('f-install').value='';
+  document.getElementById('f-gutter').value='';
+  document.getElementById('f-incgutters').checked=false;
+  document.getElementById('f-warranty').checked=false;
+  document.getElementById('f-rfcomplete').checked=false;
+  document.getElementById('f-err').style.display='none';
+  formLayers=['comp'];
+  renderFormLayers();
+}
+function openAdd(){
+  document.getElementById('modal-title').textContent='Add Job';
+  clearForm();
+  applyFormPermissions(false);
+  document.getElementById('job-modal').classList.add('open');
+}
+function openEdit(id){
+  const j=jobs.find(x=>x.id===id); if(!j) return;
+  document.getElementById('modal-title').textContent='Edit Job';
+  document.getElementById('eid').value=id;
+  document.getElementById('f-num').value=j.jobNum||'';
+  document.getElementById('f-cust').value=j.customer||'';
+  document.getElementById('f-addr').value=j.address||'';
+  document.getElementById('f-type-input').value=j.type||'comp';
+  document.getElementById('f-crew-input').value=j.crew||'';
+  document.getElementById('f-dur').value=j.duration||'1 day';
+  document.getElementById('f-gprofile').value=j.gutterProfile||'';
+  document.getElementById('f-gmaterial').value=j.gutterMaterial||'';
+  document.getElementById('f-ginstr').value=j.gutterInstruction||'na';
+  document.getElementById('f-gscreen').value=j.gutterScreen||'';
+  document.getElementById('f-gmat').value=j.gutterMaterials||'';
+  document.getElementById('f-mat').value=j.materials||'';
+  document.getElementById('f-notes').value=j.notes||'';
+  document.getElementById('f-tearoff').value=j.tearoffDate||'';
+  document.getElementById('f-install').value=j.installDate||'';
+  document.getElementById('f-gutter').value=j.gutterDate||'';
+  document.getElementById('f-incgutters').checked=!!j.includesGutters;
+  document.getElementById('f-warranty').checked=!!j.warranty;
+  document.getElementById('f-rfcomplete').checked=!!j.reroofComplete;
+  document.getElementById('f-err').style.display='none';
+  formLayers=j.layerStack&&j.layerStack.length?[...j.layerStack]:[j.type||'comp'];
+  renderFormLayers();
+  applyFormPermissions(true);
+  document.getElementById('job-modal').classList.add('open');
+}
+function editFromDrawer(){ closeDrawer(); if(did) openEdit(did); }
+
+async function saveJob(){
+  const num=document.getElementById('f-num').value.trim();
+  const cust=document.getElementById('f-cust').value.trim();
+  if(!num||!cust){ showFormErr('Job number and customer name are required.'); return; }
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Saving…';
+  const eid=document.getElementById('eid').value;
+  const data={
+    jobNum:num,customer:cust,
+    address:document.getElementById('f-addr').value.trim(),
+    type:document.getElementById('f-type-input').value,
+    crew:document.getElementById('f-crew-input').value||null,
+    duration:document.getElementById('f-dur').value,
+    gutterProfile:document.getElementById('f-gprofile').value||null,
+    gutterMaterial:document.getElementById('f-gmaterial').value||null,
+    gutterInstruction:document.getElementById('f-ginstr').value,
+    gutterScreen:document.getElementById('f-gscreen').value.trim()||null,
+    gutterMaterials:document.getElementById('f-gmat').value.trim(),
+    materials:document.getElementById('f-mat').value.trim(),
+    notes:document.getElementById('f-notes').value.trim(),
+    includesGutters:document.getElementById('f-incgutters').checked,
+    warranty:document.getElementById('f-warranty').checked,
+    reroofComplete:document.getElementById('f-rfcomplete').checked,
+    layerStack:formLayers,
+  };
+  // Only include dates if role allows editing them
+  if(canDates){
+    data.tearoffDate=document.getElementById('f-tearoff').value||null;
+    data.installDate=document.getElementById('f-install').value||null;
+    data.gutterDate=document.getElementById('f-gutter').value||null;
+  }
+  try {
+    const r=eid?await authFetch('PATCH',`/api/jobs/${eid}`,data):await authFetch('POST','/api/jobs',data);
+    const d=await r.json();
+    if(!r.ok){ showFormErr(d.error||'Save failed'); btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Save Job'; return; }
+    closeModal('job-modal'); await loadJobs();
+  } catch(e){ if(e.message!=='Unauth'){ showFormErr('Save failed: '+e.message); } }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Save Job';
+}
+function showFormErr(msg){ const e=document.getElementById('f-err');e.textContent=msg;e.style.display='block'; }
+
+async function delJob(id){
+  if(!confirm('Delete this job? This cannot be undone.'))return;
+  try { await authFetch('DELETE',`/api/jobs/${id}`); await loadJobs(); }
+  catch(e){ if(e.message!=='Unauth') alert('Delete failed: '+e.message); }
+}
+
+// ── Sales notes edit ──────────────────────────────────────────
+async function saveSalesNotes(){
+  if(!did) return;
+  const notes=document.getElementById('sales-notes-input').value;
+  try {
+    const r=await authFetch('PATCH',`/api/jobs/${did}`,{notes});
+    if(!r.ok){ const d=await r.json(); alert(d.error||'Save failed'); return; }
+    const j=jobs.find(x=>x.id===did); if(j) j.notes=notes;
+    document.getElementById('d-notes').textContent=notes||'—';
+    const c=document.getElementById('sales-notes-saved');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+    await loadJobs();
+  } catch(e){ if(e.message!=='Unauth') alert('Save failed'); }
+}
+
+// ── Detail Drawer ─────────────────────────────────────────────
+async function openDrawer(id){
+  const j=jobs.find(x=>x.id===id); if(!j) return;
+  did=id;
+  const t=JOB_TYPES[j.type]||JOB_TYPES.other;
+  document.getElementById('d-name').textContent=j.customer||'—';
+  document.getElementById('d-num').textContent='Job '+(j.jobNum||'');
+
+  let bgs=`<span class="badge" style="background:${t.bg};color:${t.text}">${t.label}</span>`;
+  if(j.includesGutters) bgs+=` <span class="badge" style="background:#D5F0E8;color:#0F6E56">+G</span>`;
+  if(j.reroofComplete)  bgs+=` <span class="badge" style="background:#D5F0E8;color:#0F6E56">✓ Reroof done</span>`;
+  if(j.crew) bgs+=` ${crewLabel(j.crew)}`;
+  document.getElementById('d-badges').innerHTML=bgs;
+
+  const backlog=isBacklog(j);
+  document.getElementById('d-boards').innerHTML=`
+    <div class="board-item ${!backlog?'active':'inactive'}" style="${!backlog?'background:#FEF0E6;color:#894020':''}">
+      <span class="board-item-dot" style="background:${!backlog?'#D85A30':'#ddd'}"></span>
+      Removal — ${backlog?'<strong>Backlog</strong>':'Scheduled · '+fmtD(j.tearoffDate)}
+    </div>
+    <div class="board-item ${onInstallBoard(j)?'active':'inactive'}" style="${onInstallBoard(j)?'background:#EAF2FB;color:#0C447C':''}">
+      <span class="board-item-dot" style="background:${onInstallBoard(j)?'#185FA5':'#ddd'}"></span>
+      Install — ${onInstallBoard(j)?fmtD(j.installDate):'Not scheduled'}
+    </div>
+    <div class="board-item ${onGutterBoard(j)?'active':'inactive'}" style="${onGutterBoard(j)?'background:#EAF7F2;color:#085041':''}">
+      <span class="board-item-dot" style="background:${onGutterBoard(j)?'#1D9E75':'#ddd'}"></span>
+      Gutters — ${onGutterBoard(j)?fmtD(j.gutterDate):'Not scheduled'}
+    </div>`;
+
+  document.getElementById('d-addr').textContent=j.address||'—';
+  document.getElementById('d-dur').textContent=j.duration||'—';
+  document.getElementById('d-layers').textContent=layerSummary(j.layerStack);
+  document.getElementById('d-mat').textContent=j.materials||'—';
+  document.getElementById('d-notes').textContent=j.notes||'—';
+
+  const gp=GUTTER_PROFILES[j.gutterProfile], gm=GUTTER_MATERIALS[j.gutterMaterial];
+  document.getElementById('d-gprofile').textContent=[gp?gp.label:'',gm?gm.label:''].filter(Boolean).join(' · ')||'—';
+  const gsf=document.getElementById('d-gscreen-f');
+  if(j.gutterScreen){gsf.style.display='flex';document.getElementById('d-gscreen').textContent=j.gutterScreen;}
+  else gsf.style.display='none';
+  const gi={na:'N/A',remove:'Remove gutters',keep:'Keep gutters'};
+  document.getElementById('d-ginstr').textContent=gi[j.gutterInstruction]||'N/A';
+  document.getElementById('d-dates').textContent=`Tear-off: ${fmtD(j.tearoffDate)}\nInstall:  ${fmtD(j.installDate)}\nGutters:  ${fmtD(j.gutterDate)}`;
+
+  // Sales role: show notes editor, hide other edit controls
+  const salesEdit=document.getElementById('sales-notes-edit');
+  const editBtn=document.getElementById('d-edit-btn');
+  const inspSec=document.getElementById('insp-sec-header');
+  const inspList=document.getElementById('insp-list');
+  const noInsp=document.getElementById('no-insp');
+
+  if(salesOnly){
+    salesEdit.style.display='block';
+    document.getElementById('sales-notes-input').value=j.notes||'';
+    document.getElementById('sales-notes-saved').style.display='none';
+    editBtn.style.display='none';
+    inspSec.style.display='none'; inspList.style.display='none'; noInsp.style.display='none';
+  } else {
+    salesEdit.style.display='none';
+    editBtn.style.display=canEdit?'flex':'none';
+    inspSec.style.display='flex'; inspList.style.display='block'; noInsp.style.display='block';
+    try { drawerInsps=await authFetch('GET',`/api/jobs/${id}/inspections`).then(r=>r.json()); }
+    catch { drawerInsps=[]; }
+    renderInsps();
+  }
+
+  // Warranty (only for reroof types, not sales)
+  const ws=document.getElementById('warranty-sec');
+  ws.style.display=(REROOF.includes(j.type)&&!salesOnly)?'block':'none';
+  if(REROOF.includes(j.type)&&!salesOnly){
+    document.getElementById('warranty-chk').checked=!!j.warranty;
+    document.getElementById('warranty-badge').style.display=j.warranty?'inline-flex':'none';
+  }
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');did=null;}
+
+async function toggleWarranty(v){
+  if(!did) return;
+  try {
+    await authFetch('PATCH',`/api/jobs/${did}`,{warranty:v});
+    document.getElementById('warranty-badge').style.display=v?'inline-flex':'none';
+    await loadJobs();
+  } catch(e){ if(e.message!=='Unauth') alert('Update failed'); }
+}
+
+// ── Inspections ───────────────────────────────────────────────
+function renderInsps(){
+  const list=document.getElementById('insp-list');
+  const noM=document.getElementById('no-insp');
+  const saveB=document.getElementById('save-insp-btn');
+  const addB=document.getElementById('add-insp-btn');
+  document.getElementById('insp-saved').style.display='none';
+  if(!drawerInsps.length){list.innerHTML='';noM.style.display='block';saveB.style.display='none';}
+  else {
+    noM.style.display='none';saveB.style.display='block';
+    list.innerHTML=drawerInsps.map((insp,i)=>{
+      const opts=INSP_TYPES.map(t=>`<option value="${t.v}"${t.v===insp.type?' selected':''}>${t.l}</option>`).join('');
+      return `<div class="insp-row-g">
+        <select style="padding:5px 7px;font-size:12px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;background:#fff;" onchange="drawerInsps[${i}].type=this.value">${opts}</select>
+        <input type="date" style="padding:5px 7px;font-size:12px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;" value="${insp.date||''}" onchange="drawerInsps[${i}].date=this.value">
+        <div class="icon-btn del" onclick="delInsp(${i})"><i class="ti ti-trash" style="font-size:12px"></i></div>
+      </div>`;
+    }).join('');
+  }
+  addB.disabled=drawerInsps.length>=4;
+}
+function addInsp(){if(!did||drawerInsps.length>=4)return;drawerInsps.push({type:'tearoff',date:''});renderInsps();}
+function delInsp(i){drawerInsps.splice(i,1);renderInsps();}
+async function saveInsps(){
+  if(!did) return;
+  try {
+    await authFetch('PUT',`/api/jobs/${did}/inspections`,drawerInsps);
+    const c=document.getElementById('insp-saved');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+    await loadJobs();
+  } catch(e){ if(e.message!=='Unauth') alert('Save failed'); }
+}
+
+// ── Modal helpers ─────────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function maybeClose(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();closeModal('job-modal');} });
+
+// ── Init — apply role-based UI ────────────────────────────────
+function initUI(){
+  const roleLabelMap={admin:'Admin',scheduler:'Scheduler',office_staff:'Office Staff',sales:'Sales'};
+  const roleClassMap={admin:'role-admin',scheduler:'role-scheduler',office_staff:'role-office_staff',sales:'role-sales'};
+  document.getElementById('user-name').textContent=getName()||'';
+  const rt=document.getElementById('role-tag');
+  rt.textContent=roleLabelMap[role]||role;
+  rt.className='role-tag '+(roleClassMap[role]||'');
+  if(canAdd) document.getElementById('add-job-btn').style.display='inline-flex';
+  if(canUsers) document.getElementById('users-btn').style.display='inline-flex';
+}
+
+// ── Auth check ────────────────────────────────────────────────
+const token=getToken(), expires=localStorage.getItem('rb_expires');
+if(!token||!expires||new Date(expires)<=new Date()){
+  window.location.href='roofboard_login.html';
+} else {
+  initUI();
+  loadJobs();
+}
+</script>
+</body>
+</html>

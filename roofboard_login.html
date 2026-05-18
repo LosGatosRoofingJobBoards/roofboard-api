@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofBoard — Login</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.card { background: #fff; border-radius: 14px; border: 0.5px solid #e0e0e0; padding: 36px 32px; width: 380px; max-width: 98vw; box-shadow: 0 4px 24px rgba(0,0,0,0.07); }
+.logo { font-size: 22px; font-weight: 700; color: #111; letter-spacing: -0.5px; margin-bottom: 6px; }
+.logo span { color: #185FA5; }
+.subtitle { font-size: 13px; color: #888; margin-bottom: 28px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+input { padding: 10px 12px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 14px; font-family: inherit; color: #111; outline: none; width: 100%; }
+input:focus { border-color: #185FA5; box-shadow: 0 0 0 2px #185FA510; }
+.btn-login { width: 100%; padding: 11px; border-radius: 8px; background: #185FA5; color: #fff; font-size: 14px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-login:hover { background: #124d8a; }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+.error-msg { font-size: 12px; font-weight: 600; color: #D85A30; background: #FEF0E6; border-radius: 7px; padding: 9px 12px; margin-top: 12px; display: none; }
+
+/* Change password panel */
+.change-pwd { display: none; }
+.change-pwd-title { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 6px; }
+.change-pwd-sub { font-size: 12px; color: #888; margin-bottom: 20px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Roof<span>Board</span></div>
+  <div class="subtitle">Sign in to continue</div>
+
+  <!-- Login form -->
+  <div id="login-form">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      <i class="ti ti-login"></i> Sign in
+    </button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- Change password form (shown on first login) -->
+  <div class="change-pwd" id="change-pwd-form">
+    <div class="change-pwd-title">Set your password</div>
+    <div class="change-pwd-sub">This is your first login. Please set a new password before continuing.</div>
+    <div class="form-group">
+      <label>New Password</label>
+      <input type="password" id="new-pwd" placeholder="At least 8 characters" onkeydown="if(event.key==='Enter')doChangePwd()">
+    </div>
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input type="password" id="confirm-pwd" placeholder="Repeat new password" onkeydown="if(event.key==='Enter')doChangePwd()">
+    </div>
+    <button class="btn-login" id="change-btn" onclick="doChangePwd()">
+      <i class="ti ti-check"></i> Set password and continue
+    </button>
+    <div class="error-msg" id="change-error-msg"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://YOUR-APP.railway.app';
+
+async function doLogin(){
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('error-msg');
+  errEl.style.display='none';
+  if(!username||!password){ showError(errEl,'Please enter your username and password.'); return; }
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Signing in…';
+  try {
+    const r = await fetch(API+'/api/auth/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password})
+    });
+    const data = await r.json();
+    if(!r.ok){ showError(errEl, data.error||'Login failed'); btn.disabled=false; btn.innerHTML='<i class="ti ti-login"></i> Sign in'; return; }
+
+    // Store session
+    localStorage.setItem('rb_token', data.token);
+    localStorage.setItem('rb_role', data.role);
+    localStorage.setItem('rb_name', data.fullName||data.username);
+    localStorage.setItem('rb_expires', data.expiresAt);
+
+    if(data.mustChangePwd){
+      // Show change password form
+      document.getElementById('login-form').style.display='none';
+      document.getElementById('change-pwd-form').style.display='block';
+      btn.disabled=false; btn.innerHTML='<i class="ti ti-login"></i> Sign in';
+    } else {
+      window.location.href = 'roofboard_database.html';
+    }
+  } catch(e){
+    showError(errEl,'Could not reach server. Check your connection.');
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-login"></i> Sign in';
+  }
+}
+
+async function doChangePwd(){
+  const newPwd = document.getElementById('new-pwd').value;
+  const confirmPwd = document.getElementById('confirm-pwd').value;
+  const btn = document.getElementById('change-btn');
+  const errEl = document.getElementById('change-error-msg');
+  errEl.style.display='none';
+  if(newPwd.length<8){ showError(errEl,'Password must be at least 8 characters.'); return; }
+  if(newPwd!==confirmPwd){ showError(errEl,'Passwords do not match.'); return; }
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Saving…';
+  try {
+    const token = localStorage.getItem('rb_token');
+    const r = await fetch(API+'/api/auth/change-password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({newPassword:newPwd})
+    });
+    const data = await r.json();
+    if(!r.ok){ showError(errEl, data.error||'Failed to change password'); btn.disabled=false; btn.innerHTML='<i class="ti ti-check"></i> Set password and continue'; return; }
+    window.location.href='roofboard_database.html';
+  } catch(e){
+    showError(errEl,'Could not reach server.');
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-check"></i> Set password and continue';
+  }
+}
+
+function showError(el, msg){ el.textContent=msg; el.style.display='block'; }
+
+// If already logged in, redirect
+const token = localStorage.getItem('rb_token');
+const expires = localStorage.getItem('rb_expires');
+if(token && expires && new Date(expires) > new Date()){
+  window.location.href='roofboard_database.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofBoard — Removal Crew</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; padding: 14px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 10px 16px; }
+  .logo { font-size: 18px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+  .logo span { color: #D85A30; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .header-tag { font-size: 12px; font-weight: 700; color: #fff; background: #D85A30; padding: 3px 11px; border-radius: 12px; }
+  .main-layout { display: grid; grid-template-columns: 1fr 290px; gap: 12px; align-items: start; }
+  .cal-panel { background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 14px; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .panel-title { font-size: 14px; font-weight: 600; color: #111; }
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .nav-btn { width: 28px; height: 28px; border-radius: 8px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; font-size: 15px; }
+  .nav-btn:hover { background: #fff; color: #111; }
+  .week-range { font-size: 13px; color: #888; min-width: 170px; text-align: center; }
+  .week-block { margin-bottom: 16px; }
+  .week-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.7px; padding: 4px 0; margin-bottom: 4px; border-bottom: 0.5px solid #f0f0ec; }
+  .day-row { display: grid; grid-template-columns: 72px 1fr; gap: 8px; min-height: 56px; margin-bottom: 3px; align-items: stretch; }
+  .day-label-cell { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-right: 10px; border-right: 2px solid #f0f0ec; }
+  .day-label-cell.today-col { border-right-color: #D85A30; }
+  .day-name-text { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.4px; }
+  .day-date-text { font-size: 16px; font-weight: 700; color: #aaa; line-height: 1.1; }
+  .day-label-cell.today-col .day-date-text { color: #D85A30; }
+  .day-jobs-cell { display: flex; flex-direction: column; gap: 3px; padding: 5px 0; justify-content: center; }
+  .empty-slot { background: #f8f8f5; border-radius: 6px; height: 38px; border: 0.5px dashed #e4e4e0; }
+  .job-card { border-radius: 6px; padding: 5px 9px; cursor: pointer; transition: opacity 0.12s; border-left: 4px solid transparent; }
+  .job-card:hover { opacity: 0.78; }
+  .job-card-row1 { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .job-card-num  { font-size: 10px; font-weight: 800; opacity: 0.65; flex-shrink: 0; }
+  .job-card-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .job-card-crew { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+  .job-card-row2 { font-size: 11px; margin-top: 1px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag-sm { font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px; flex-shrink: 0; }
+  .backlog-panel { background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 14px; }
+  .backlog-count-badge { font-size: 11px; color: #888; background: #f0f0ec; padding: 2px 9px; border-radius: 10px; }
+  .backlog-scroll { display: flex; flex-direction: column; gap: 5px; max-height: 680px; overflow-y: auto; margin-top: 8px; }
+  .backlog-item { border-radius: 8px; padding: 9px 11px; cursor: pointer; transition: opacity 0.12s; border-left: 4px solid transparent; }
+  .backlog-item:hover { opacity: 0.78; }
+  .backlog-row1 { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+  .backlog-num  { font-size: 11px; font-weight: 800; opacity: 0.7; flex-shrink: 0; }
+  .backlog-name { font-size: 12px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .backlog-tags { display: flex; gap: 3px; align-items: center; flex-shrink: 0; }
+  .backlog-row2 { font-size: 11px; opacity: 0.75; }
+  .backlog-row3 { font-size: 11px; font-weight: 600; margin-top: 3px; opacity: 0.85; }
+  .legend { margin-top: 12px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .legend-group-label { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+  .legend-items { display: flex; gap: 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
+  .legend-swatch { width: 22px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 18px 20px; width: 420px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2px; }
+  .modal-title { font-size: 16px; font-weight: 600; color: #111; }
+  .modal-jobnum { font-size: 13px; font-weight: 800; color: #D85A30; margin-bottom: 8px; }
+  .modal-close { cursor: pointer; color: #888; background: none; border: none; font-family: inherit; font-size: 20px; padding: 0; line-height: 1; }
+  .modal-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .modal-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 12px; }
+  .modal-field { margin-bottom: 10px; }
+  .modal-label { font-size: 11px; color: #999; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+  .modal-value { font-size: 13px; color: #222; line-height: 1.5; }
+  .gutter-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 10px; }
+  .gutter-remove { background: #FDE6D8; color: #712B13; border: 1px solid #E8856A; }
+  .gutter-keep   { background: #DCF0CC; color: #27500A; border: 1px solid #639922; }
+  .gutter-na     { background: #f0f0ec; color: #999; border: 1px solid #ddd; }
+  /* Layer stack in modal */
+  .layers-section { margin-top: 12px; padding-top: 12px; border-top: 1.5px solid #f0f0ec; }
+  .layers-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .layers-title { font-size: 12px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px; }
+  .layers-title i { color: #D85A30; font-size: 15px; }
+  .layer-count-ctrl { display: flex; align-items: center; gap: 8px; }
+  .lc-btn { width: 26px; height: 26px; border-radius: 6px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; font-family: inherit; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .lc-btn:disabled { opacity: 0.35; cursor: default; }
+  .lc-num { font-size: 15px; font-weight: 700; color: #111; min-width: 18px; text-align: center; }
+  .layer-stack-rows { display: flex; flex-direction: column; gap: 4px; }
+  .layer-row-item { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; }
+  .layer-pos-lbl { font-size: 11px; color: #999; text-align: right; padding-right: 4px; }
+  .layer-arrow-row { padding: 1px 0 1px 88px; color: #ccc; font-size: 11px; }
+  .layer-select { font-size: 12px; font-family: inherit; border: 0.5px solid #d0d0cc; border-radius: 6px; padding: 5px 8px; background: #fff; color: #222; cursor: pointer; width: 100%; }
+  .save-layers-btn { margin-top: 10px; width: 100%; padding: 9px; border-radius: 8px; background: #D85A30; color: #fff; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; }
+  .save-layers-btn:hover { background: #bc4c27; }
+  .save-layers-confirm { font-size: 12px; color: #1D9E75; font-weight: 600; text-align: center; margin-top: 6px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">Roof<span>Board</span></div>
+    <div class="header-tag">Removal Crew</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span class="live-dot"></span>
+    <span style="font-size:12px;color:#888">Live</span>
+  </div>
+</div>
+
+<div class="main-layout">
+  <div class="cal-panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="ti ti-calendar" style="font-size:15px;color:#D85A30;vertical-align:-2px;margin-right:5px"></i>Scheduled tear-offs</div>
+      <div class="week-nav">
+        <button class="nav-btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+        <div class="week-range" id="week-range"></div>
+        <button class="nav-btn" onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div id="two-week-grid"></div>
+  </div>
+
+  <div class="backlog-panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="ti ti-list" style="font-size:15px;color:#D85A30;vertical-align:-2px;margin-right:5px"></i>Backlog</div>
+      <div class="backlog-count-badge" id="backlog-count"></div>
+    </div>
+    <div class="backlog-scroll" id="backlog-list"></div>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-title" id="m-name"></div>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-jobnum" id="m-jobnum"></div>
+    <div class="modal-badges" id="m-badges"></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-map-pin" style="font-size:13px"></i> Address</div><div class="modal-value" id="m-addr"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar" style="font-size:13px"></i> Install date</div><div class="modal-value" id="m-install"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-hammer" style="font-size:13px"></i> Tear-off date</div><div class="modal-value" id="m-tearoff"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-clock" style="font-size:13px"></i> Duration</div><div class="modal-value" id="m-dur"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-package" style="font-size:13px"></i> Materials</div><div class="modal-value" id="m-mat"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-droplet" style="font-size:13px"></i> Gutters</div><div class="modal-value" id="m-gutters"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:13px"></i> Notes</div><div class="modal-value" id="m-notes"></div></div>
+
+    <div class="layers-section">
+      <div class="layers-header">
+        <div class="layers-title"><i class="ti ti-stack-2"></i> Roof layers</div>
+        <div class="layer-count-ctrl">
+          <span style="font-size:12px;color:#888;">Layers:</span>
+          <button class="lc-btn" id="layer-minus" onclick="changeLayerCount(-1)">−</button>
+          <span class="lc-num" id="layer-count-num">1</span>
+          <button class="lc-btn" id="layer-plus"  onclick="changeLayerCount(1)">+</button>
+        </div>
+      </div>
+      <div class="layer-stack-rows" id="layer-stack"></div>
+      <button class="save-layers-btn" onclick="saveLayers()">
+        <i class="ti ti-device-floppy" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i> Save layers
+      </button>
+      <div class="save-layers-confirm" id="save-layers-confirm">✓ Layers saved</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const API = 'https://lgrroofboard-api-production.up.railway.app';
+
+const TODAY = new Date();
+let weekOffset = 0;
+let allJobs = [], activeJobId = null;
+
+const JOB_TYPES = {
+  comp:    {label:'Comp',     bg:'#DEEDFB',text:'#0C447C',border:'#185FA5'},
+  tile:    {label:'Tile',     bg:'#E8E6FD',text:'#3C3489',border:'#534AB7'},
+  metal:   {label:'Metal',    bg:'#E8E7E1',text:'#444441',border:'#888780'},
+  wood:    {label:'Wood',     bg:'#F8E9C8',text:'#633806',border:'#BA7517'},
+  flat:    {label:'Flat/TPO', bg:'#FAE0E0',text:'#791F1F',border:'#E24B4A'},
+  polymer: {label:'Polymer',  bg:'#DCF0CC',text:'#27500A',border:'#639922'},
+  other:   {label:'Other',    bg:'#F8E2ED',text:'#72243E',border:'#993556'},
+  gutters_only:{label:'Gutters Only',bg:'#C8EEE0',text:'#085041',border:'#1D9E75'},
+  repairs: {label:'Repairs',  bg:'#FDE6D8',text:'#712B13',border:'#D85A30'},
+};
+const REROOF_KEYS = ['comp','tile','metal','wood','flat','polymer','other'];
+const CREW_STYLES = [
+  {bg:'#DEEDFB',text:'#0C447C'},{bg:'#C8EEE0',text:'#085041'},
+  {bg:'#F8E9C8',text:'#633806'},{bg:'#F8E2ED',text:'#72243E'},
+  {bg:'#FAE0E0',text:'#791F1F'},{bg:'#E8E6FD',text:'#3C3489'},
+  {bg:'#C8EEE0',text:'#0F6E56'},{bg:'#DCF0CC',text:'#27500A'},
+];
+const LAYER_MATS = [
+  {v:'comp',l:'Comp'},{v:'tile',l:'Tile'},{v:'metal',l:'Metal'},
+  {v:'wood',l:'Wood'},{v:'flat',l:'Flat/TPO'},{v:'polymer',l:'Polymer'},{v:'other',l:'Other'}
+];
+
+// ── API ───────────────────────────────────────────────────────
+async function apiFetch(path){
+  const r=await fetch(API+path); if(!r.ok) throw new Error('API '+r.status); return r.json();
+}
+async function apiPost(method,path,body){
+  const r=await fetch(API+path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('API '+r.status); return r.json();
+}
+
+// ── Load ──────────────────────────────────────────────────────
+async function loadJobs(){
+  try {
+    const jobs = await apiFetch('/api/jobs');
+    allJobs = jobs.map(j=>({
+      ...j,
+      installDate:  j.installDate  ? new Date(j.installDate+'T00:00:00')  : null,
+      tearOffDate:  j.tearoffDate  ? new Date(j.tearoffDate+'T00:00:00')  : null,
+      isScheduled:  !!j.tearoffDate,
+      assignedCrewId: j.crew&&!['gutter','removal',''].includes(j.crew) ? parseInt(j.crew) : null,
+    }));
+    renderTwoWeek();
+    renderBacklog();
+    renderLegend();
+  } catch(e){ console.error('Load failed:',e); }
+}
+setInterval(loadJobs, 30000);
+
+// ── Helpers ───────────────────────────────────────────────────
+function sameDay(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function fmtShort(d){return d?d.toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';}
+function fmtFull(d){return d?d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'Not scheduled';}
+
+function getLayers(job){
+  if(job.layerStack&&job.layerStack.length) return job.layerStack;
+  return [job.type||'comp'];
+}
+function layerTag(job){
+  const layers=getLayers(job);
+  if(layers.length<=1) return '';
+  return `<span class="tag-sm" style="background:#F8E9C8;color:#633806">${layers.length}L</span>`;
+}
+function gutterInfo(g){
+  if(g==='remove') return {label:'Remove gutters',cls:'gutter-remove',pillStyle:'background:#FDE6D8;color:#712B13',short:'−G'};
+  if(g==='keep')   return {label:'Keep gutters',  cls:'gutter-keep',  pillStyle:'background:#DCF0CC;color:#27500A',short:'+G'};
+  return                  {label:'No gutters',    cls:'gutter-na',    pillStyle:'',short:''};
+}
+
+// ── Week grid ─────────────────────────────────────────────────
+function getWeekStart(){
+  const d=new Date(TODAY),dow=d.getDay();
+  const mon=new Date(d);
+  mon.setDate(d.getDate()-(dow===0?6:dow-1)+weekOffset*14);
+  return mon;
+}
+
+function renderTwoWeek(){
+  const ws=getWeekStart();
+  const we=new Date(ws); we.setDate(ws.getDate()+13);
+  document.getElementById('week-range').textContent=fmtShort(ws)+' – '+fmtShort(we);
+  const scheduledJobs=allJobs.filter(j=>j.isScheduled);
+  const workdays=[];
+  for(let i=0;i<14;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);if(d.getDay()!==0&&d.getDay()!==6)workdays.push(d);}
+  const w1=workdays.slice(0,5), w2=workdays.slice(5,10);
+
+  function buildWeek(days){
+    const wl=`<div class="week-label">Week of ${fmtShort(days[0])}</div>`;
+    const rows=days.map(day=>{
+      const isToday=sameDay(day,TODAY);
+      const dayJobs=scheduledJobs.filter(j=>sameDay(j.tearOffDate,day));
+      const jobsHtml=dayJobs.length===0?'<div class="empty-slot"></div>':dayJobs.map(j=>{
+        const t=JOB_TYPES[j.type]||JOB_TYPES.other;
+        const cs=j.assignedCrewId?CREW_STYLES[j.assignedCrewId-1]:null;
+        const crewTag=cs?`<span class="job-card-crew" style="background:${cs.bg};color:${cs.text}">Crew ${j.assignedCrewId}</span>`:'';
+        const gi=gutterInfo(j.gutterInstruction);
+        return `<div class="job-card" style="background:${t.bg};color:${t.text};border-left-color:${t.border}" onclick="openJob('${j.id}')">
+          <div class="job-card-row1">
+            <span class="job-card-num">${j.jobNum}</span>
+            <span class="job-card-name">${j.customer}</span>
+            ${crewTag}
+            ${layerTag(j)}
+            ${gi.short?`<span class="tag-sm" style="${gi.pillStyle}">${gi.short}</span>`:''}
+          </div>
+          <div class="job-card-row2"><i class="ti ti-map-pin" style="font-size:10px"></i> ${j.address} &nbsp;·&nbsp; ${t.label}</div>
+        </div>`;
+      }).join('');
+      return `<div class="day-row">
+        <div class="day-label-cell${isToday?' today-col':''}">
+          <div class="day-name-text">${day.toLocaleDateString('en-US',{weekday:'short'})}</div>
+          <div class="day-date-text">${day.getDate()}</div>
+        </div>
+        <div class="day-jobs-cell">${jobsHtml}</div>
+      </div>`;
+    }).join('');
+    return `<div class="week-block">${wl}${rows}</div>`;
+  }
+  document.getElementById('two-week-grid').innerHTML=buildWeek(w1)+buildWeek(w2);
+}
+
+// ── Backlog ───────────────────────────────────────────────────
+function renderBacklog(){
+  const backlog=allJobs.filter(j=>!j.isScheduled).sort((a,b)=>{
+    const na=parseInt((a.jobNum||'0').replace('#','')),nb=parseInt((b.jobNum||'0').replace('#',''));
+    return na-nb;
+  });
+  document.getElementById('backlog-count').textContent=backlog.length+' pending';
+  if(!backlog.length){
+    document.getElementById('backlog-list').innerHTML='<div style="font-size:13px;color:#ccc;text-align:center;padding:20px 0">No pending jobs</div>';
+    return;
+  }
+  document.getElementById('backlog-list').innerHTML=backlog.map(j=>{
+    const t=JOB_TYPES[j.type]||JOB_TYPES.other;
+    const gi=gutterInfo(j.gutterInstruction);
+    return `<div class="backlog-item" style="background:${t.bg};color:${t.text};border-left-color:${t.border}" onclick="openJob('${j.id}')">
+      <div class="backlog-row1">
+        <span class="backlog-num">${j.jobNum}</span>
+        <span class="backlog-name">${j.customer}</span>
+        <div class="backlog-tags">
+          ${layerTag(j)}
+          ${gi.short?`<span class="tag-sm" style="${gi.pillStyle}">${gi.short}</span>`:''}
+        </div>
+      </div>
+      <div class="backlog-row2"><i class="ti ti-map-pin" style="font-size:10px"></i> ${j.address} &nbsp;·&nbsp; ${t.label}</div>
+      ${j.installDate?`<div class="backlog-row3"><i class="ti ti-calendar" style="font-size:10px"></i> Install: ${fmtShort(j.installDate)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── Legend ────────────────────────────────────────────────────
+function renderLegend(){
+  const items=Object.keys(JOB_TYPES).map(k=>{const t=JOB_TYPES[k];return `<div class="legend-item"><div class="legend-swatch" style="background:${t.bg};border:1.5px solid ${t.border}"></div><span>${t.label}</span></div>`;}).join('');
+  const gutterItems=`
+    <div class="legend-item"><span class="tag-sm" style="background:#FDE6D8;color:#712B13;margin-right:2px">−G</span><span>Remove gutters</span></div>
+    <div class="legend-item"><span class="tag-sm" style="background:#DCF0CC;color:#27500A;margin-right:2px">+G</span><span>Keep gutters</span></div>
+    <div class="legend-item"><span class="tag-sm" style="background:#F8E9C8;color:#633806;margin-right:2px">2L</span><span>Multiple layers</span></div>`;
+  document.getElementById('legend').innerHTML=`
+    <div><div class="legend-group-label">Roof type</div><div class="legend-items">${items}</div></div>
+    <div><div class="legend-group-label">Indicators</div><div class="legend-items">${gutterItems}</div></div>`;
+}
+
+// ── Layer stack in modal ──────────────────────────────────────
+function renderLayerStack(job){
+  const layers=getLayers(job);
+  document.getElementById('layer-count-num').textContent=layers.length;
+  document.getElementById('layer-minus').disabled=layers.length<=1;
+  document.getElementById('layer-plus').disabled=layers.length>=4;
+  document.getElementById('layer-stack').innerHTML=layers.map((mat,idx)=>{
+    const isTop=idx===0, isBot=idx===layers.length-1;
+    const pos=layers.length===1?'Only layer':isTop?'Top layer':isBot?'Bottom layer':`Layer ${idx+1}`;
+    const arrow=idx>0?`<div class="layer-arrow-row"><i class="ti ti-arrow-down"></i></div>`:'';
+    const opts=LAYER_MATS.map(m=>`<option value="${m.v}"${m.v===mat?' selected':''}>${m.l}</option>`).join('');
+    return `${arrow}<div class="layer-row-item">
+      <div class="layer-pos-lbl">${pos}</div>
+      <select class="layer-select" onchange="updateLayer('${job.id}',${idx},this.value)">${opts}</select>
+    </div>`;
+  }).join('');
+  document.getElementById('save-layers-confirm').style.display='none';
+}
+function changeLayerCount(dir){
+  if(!activeJobId) return;
+  const job=allJobs.find(j=>j.id===activeJobId); if(!job) return;
+  const layers=[...getLayers(job)];
+  if(dir===1&&layers.length<4) layers.push('comp');
+  else if(dir===-1&&layers.length>1) layers.pop();
+  job.layerStack=layers;
+  renderLayerStack(job);
+}
+function updateLayer(jobId,idx,value){
+  const job=allJobs.find(j=>j.id===jobId); if(!job) return;
+  const layers=[...getLayers(job)]; layers[idx]=value; job.layerStack=layers;
+}
+async function saveLayers(){
+  if(!activeJobId) return;
+  const job=allJobs.find(j=>j.id===activeJobId); if(!job) return;
+  try {
+    await apiPost('PATCH',`/api/jobs/${activeJobId}`,{layerStack:job.layerStack||[job.type]});
+    const c=document.getElementById('save-layers-confirm');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+    renderTwoWeek(); renderBacklog();
+  } catch(e){alert('Save failed: '+e.message);}
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openJob(id){
+  const job=allJobs.find(j=>j.id===id); if(!job) return;
+  activeJobId=id;
+  const t=JOB_TYPES[job.type]||JOB_TYPES.other;
+  document.getElementById('m-name').textContent=job.customer;
+  document.getElementById('m-jobnum').textContent='Job '+job.jobNum;
+  let badges=`<span class="modal-badge" style="background:${t.bg};color:${t.text};border:1px solid ${t.border}">${t.label}</span>`;
+  if(job.isScheduled){
+    if(job.assignedCrewId){
+      const cs=CREW_STYLES[job.assignedCrewId-1];
+      badges+=`<span class="modal-badge" style="background:${cs.bg};color:${cs.text}">Crew ${job.assignedCrewId}</span>`;
+    }
+    badges+=`<span class="modal-badge" style="background:#DCF0CC;color:#27500A">Scheduled</span>`;
+  } else {
+    badges+=`<span class="modal-badge" style="background:#FDE6D8;color:#712B13">Backlog</span>`;
+  }
+  document.getElementById('m-badges').innerHTML=badges;
+  document.getElementById('m-addr').textContent=job.address||'—';
+  document.getElementById('m-install').textContent=fmtFull(job.installDate);
+  document.getElementById('m-tearoff').textContent=job.tearOffDate?fmtFull(job.tearOffDate):'Not yet scheduled';
+  document.getElementById('m-dur').textContent=job.duration||'—';
+  document.getElementById('m-mat').textContent=job.materials||'—';
+  const gi=gutterInfo(job.gutterInstruction);
+  document.getElementById('m-gutters').innerHTML=`<span class="gutter-badge ${gi.cls}"><i class="ti ti-droplet" style="font-size:12px"></i> ${gi.label}</span>`;
+  document.getElementById('m-notes').textContent=job.notes||'—';
+  renderLayerStack(job);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');activeJobId=null;}
+function handleOverlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+function changeWeek(dir){weekOffset+=dir;renderTwoWeek();}
+
+loadJobs();
+</script>
+</body>
+</html>

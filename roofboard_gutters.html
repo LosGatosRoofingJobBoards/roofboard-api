@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoofBoard — Gutter Crew</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; padding: 14px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 10px 16px; }
+  .logo { font-size: 18px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+  .logo span { color: #1D9E75; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .header-tag { font-size: 12px; font-weight: 700; color: #fff; background: #1D9E75; padding: 3px 11px; border-radius: 12px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .nav-btn { width: 30px; height: 30px; border-radius: 8px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; font-size: 16px; }
+  .nav-btn:hover { background: #fff; color: #111; }
+  .month-title { font-size: 17px; font-weight: 600; color: #111; min-width: 160px; text-align: center; }
+  .job-count-label { font-size: 12px; color: #888; }
+  .dow-row { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 2px; margin-bottom: 2px; }
+  .dow-cell { text-align: center; font-size: 11px; font-weight: 600; color: #888; padding: 5px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 2px; }
+  .cal-day { background: #fff; border: 0.5px solid #e4e4e0; border-radius: 8px; min-height: 118px; padding: 6px; overflow: hidden; }
+  .cal-day.other-month { background: #f8f8f5; opacity: 0.5; }
+  .cal-day.today { border: 2px solid #1D9E75; }
+  .cal-day.weekend { background: #f8f8f5; }
+  .day-num { font-size: 12px; font-weight: 600; color: #999; margin-bottom: 5px; }
+  .cal-day.today .day-num { color: #1D9E75; }
+  .cal-day.weekend .day-num { color: #bbb; }
+  .job-pill { border-radius: 5px; padding: 3px 5px 4px; margin-bottom: 3px; font-size: 11px; font-weight: 600; cursor: pointer; line-height: 1.3; transition: opacity 0.1s; border-left: 3px solid transparent; overflow: hidden; }
+  .job-pill:hover { opacity: 0.75; }
+  .job-pill.waiting { border-left-style: dashed; opacity: 0.82; }
+  .pill-top { display: flex; align-items: baseline; gap: 3px; overflow: hidden; }
+  .pill-num { font-size: 10px; font-weight: 800; opacity: 0.6; flex-shrink: 0; }
+  .pill-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill-tags { display: flex; gap: 2px; margin-top: 2px; flex-wrap: wrap; }
+  .pill-tag { display: inline-block; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 3px; white-space: nowrap; }
+  .more-pill { font-size: 10px; color: #aaa; padding: 1px 5px; }
+  .legend { margin-top: 14px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .legend-group-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 7px; }
+  .legend-items { display: flex; gap: 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555; }
+  .legend-swatch { width: 28px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 100; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 14px; padding: 20px 22px; width: 480px; max-width: 98vw; margin: auto; }
+  .modal-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2px; }
+  .modal-title { font-size: 16px; font-weight: 600; color: #111; }
+  .modal-jobnum { font-size: 13px; font-weight: 800; color: #1D9E75; margin-bottom: 10px; }
+  .modal-close { cursor: pointer; color: #888; background: none; border: none; font-family: inherit; font-size: 20px; padding: 0; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  .modal-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .modal-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 12px; }
+  .modal-field { margin-bottom: 10px; }
+  .modal-label { font-size: 11px; color: #999; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+  .modal-value { font-size: 13px; color: #222; line-height: 1.5; }
+  .gutter-section { margin-top: 12px; padding: 11px 13px; border-radius: 8px; background: #EAF7F2; }
+  .gutter-section-title { font-size: 11px; font-weight: 700; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .reroof-section { margin-top: 12px; padding: 11px 13px; border-radius: 8px; }
+  .reroof-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">Roof<span>Board</span></div>
+    <div class="header-tag">Gutter Crew</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span class="live-dot"></span>
+    <span style="font-size:12px;color:#888">Live</span>
+  </div>
+</div>
+
+<div class="cal-header">
+  <div class="month-nav">
+    <button class="nav-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+    <div class="month-title" id="month-title"></div>
+    <button class="nav-btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+  </div>
+  <div class="job-count-label" id="job-count"></div>
+</div>
+
+<div class="dow-row">
+  <div class="dow-cell">Sun</div><div class="dow-cell">Mon</div><div class="dow-cell">Tue</div>
+  <div class="dow-cell">Wed</div><div class="dow-cell">Thu</div><div class="dow-cell">Fri</div>
+  <div class="dow-cell">Sat</div>
+</div>
+<div class="cal-grid" id="cal-grid"></div>
+<div class="legend" id="legend"></div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-title" id="m-name"></div>
+      <button class="modal-close" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-jobnum" id="m-jobnum"></div>
+    <div class="modal-badges" id="m-badges"></div>
+    <div class="modal-field">
+      <div class="modal-label"><i class="ti ti-map-pin" style="font-size:13px"></i> Address</div>
+      <div class="modal-value" id="m-addr"></div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label"><i class="ti ti-calendar" style="font-size:13px"></i> Gutter install date</div>
+      <div class="modal-value" id="m-gutter-date"></div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label"><i class="ti ti-clock" style="font-size:13px"></i> Duration</div>
+      <div class="modal-value" id="m-dur"></div>
+    </div>
+    <div class="gutter-section">
+      <div class="gutter-section-title"><i class="ti ti-droplet" style="font-size:12px"></i> Gutter details</div>
+      <div class="modal-field" style="margin-bottom:8px">
+        <div class="modal-label">Profile</div>
+        <div class="modal-value" id="m-gprofile"></div>
+      </div>
+      <div class="modal-field" style="margin-bottom:8px">
+        <div class="modal-label">Material</div>
+        <div class="modal-value" id="m-gmaterial"></div>
+      </div>
+      <div class="modal-field" id="m-gscreen-field" style="margin-bottom:8px;display:none">
+        <div class="modal-label">Screen</div>
+        <div class="modal-value" id="m-gscreen"></div>
+      </div>
+      <div class="modal-field" style="margin-bottom:0">
+        <div class="modal-label">Materials / notes</div>
+        <div class="modal-value" id="m-gmat"></div>
+      </div>
+    </div>
+    <div class="modal-field" style="margin-top:12px">
+      <div class="modal-label"><i class="ti ti-notes" style="font-size:13px"></i> Notes</div>
+      <div class="modal-value" id="m-notes"></div>
+    </div>
+    <div class="reroof-section" id="m-reroof-section" style="display:none">
+      <div class="reroof-section-title" id="m-reroof-title"></div>
+      <div class="modal-field" style="margin-bottom:6px">
+        <div class="modal-label">Roof type</div>
+        <div class="modal-value" id="m-reroof-type"></div>
+      </div>
+      <div class="modal-field" style="margin-bottom:0">
+        <div class="modal-label">Reroof date</div>
+        <div class="modal-value" id="m-reroof-date"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const API = 'https://lgrroofboard-api-production.up.railway.app';
+
+const TODAY = new Date();
+let viewYear = TODAY.getFullYear();
+let viewMonth = TODAY.getMonth();
+let allJobs = [];
+
+// ── Roof type colors ──────────────────────────────────────────
+const ROOF_TYPES = {
+  comp:    {label:'Comp',     bg:'#DEEDFB',text:'#0C447C',border:'#185FA5'},
+  tile:    {label:'Tile',     bg:'#E8E6FD',text:'#3C3489',border:'#534AB7'},
+  metal:   {label:'Metal',    bg:'#E8E7E1',text:'#444441',border:'#888780'},
+  wood:    {label:'Wood',     bg:'#F8E9C8',text:'#633806',border:'#BA7517'},
+  flat:    {label:'Flat/TPO', bg:'#FAE0E0',text:'#791F1F',border:'#E24B4A'},
+  polymer: {label:'Polymer',  bg:'#DCF0CC',text:'#27500A',border:'#639922'},
+  other:   {label:'Other',    bg:'#F8E2ED',text:'#72243E',border:'#993556'},
+};
+const REROOF_KEYS = ['comp','tile','metal','wood','flat','polymer','other'];
+const GUTTER_ONLY_STYLE = {bg:'#D0F0E8',text:'#064D38',border:'#0F9E75'};
+
+// ── Gutter profile & material systems ────────────────────────
+const GUTTER_PROFILES = {
+  '5.5_fascia':        {label:'5½" Fascia',       short:'5½F'},
+  '5.5_curved_fascia': {label:'5½" Curved Fascia', short:'5½CF'},
+  '5_ogee':            {label:'5" Ogee',            short:'5OG'},
+  '6_ogee':            {label:'6" Ogee',            short:'6OG'},
+  '7.5_fascia':        {label:'7½" Fascia',         short:'7½F'},
+};
+const GUTTER_MATERIALS = {
+  aluminum:   {label:'Aluminum',  short:'AL',  bg:'#D6EAF8',text:'#1A5276'},
+  steel:      {label:'Steel',     short:'STL', bg:'#EAECEE',text:'#424949'},
+  bonderized: {label:'Bonderized',short:'BND', bg:'#F9EBEA',text:'#7B241C'},
+};
+
+// ── API ───────────────────────────────────────────────────────
+async function apiFetch(path){
+  const r=await fetch(API+path); if(!r.ok) throw new Error('API '+r.status); return r.json();
+}
+
+// ── Load ──────────────────────────────────────────────────────
+async function loadJobs(){
+  try {
+    const jobs = await apiFetch('/api/jobs?view=gutters');
+    allJobs = jobs.map(j=>{
+      const gutterDate = j.gutterDate ? new Date(j.gutterDate+'T00:00:00') : null;
+      const reroofDate = j.tearoffDate ? new Date(j.tearoffDate+'T00:00:00') : null;
+      let kind;
+      if(j.type==='gutters_only') kind='gutterOnly';
+      else if(j.reroofComplete) kind='reroofReady';
+      else kind='reroofWaiting';
+      return {...j, gutterDate, reroofDate, kind};
+    }).filter(j=>j.gutterDate);
+    renderCalendar();
+  } catch(e){ console.error('Load failed:',e); }
+}
+setInterval(loadJobs, 30000);
+
+function sameDay(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function fmtFull(d){return d?d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}):'—';}
+
+function getPillStyle(job){
+  if(job.kind==='gutterOnly') return GUTTER_ONLY_STYLE;
+  return ROOF_TYPES[job.type]||ROOF_TYPES.other;
+}
+
+// ── Calendar ──────────────────────────────────────────────────
+function renderCalendar(){
+  const firstDay=new Date(viewYear,viewMonth,1);
+  const lastDay=new Date(viewYear,viewMonth+1,0);
+  document.getElementById('month-title').textContent=firstDay.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const monthJobs=allJobs.filter(j=>j.gutterDate&&j.gutterDate.getFullYear()===viewYear&&j.gutterDate.getMonth()===viewMonth);
+  document.getElementById('job-count').textContent=monthJobs.length+' gutter jobs this month';
+
+  const startDow=firstDay.getDay();
+  const cells=[];
+  for(let i=0;i<startDow;i++) cells.push({date:new Date(viewYear,viewMonth,i-startDow+1),other:true});
+  for(let d=1;d<=lastDay.getDate();d++) cells.push({date:new Date(viewYear,viewMonth,d),other:false});
+  while(cells.length%7!==0) cells.push({date:new Date(viewYear,viewMonth+1,cells.length-lastDay.getDate()-startDow+1),other:true});
+
+  const MAX=3;
+  document.getElementById('cal-grid').innerHTML=cells.map(cell=>{
+    const isToday=sameDay(cell.date,TODAY);
+    const isWeekend=cell.date.getDay()===0||cell.date.getDay()===6;
+    const dayJobs=allJobs.filter(j=>sameDay(j.gutterDate,cell.date));
+    const shown=dayJobs.slice(0,MAX); const extra=dayJobs.length-MAX;
+    const pills=shown.map(j=>{
+      const style=getPillStyle(j);
+      const isWaiting=j.kind==='reroofWaiting';
+      const statusIcon=j.kind==='reroofReady'?'✓ ':j.kind==='reroofWaiting'?'⏳ ':'';
+      // Profile tag
+      const gp=GUTTER_PROFILES[j.gutterProfile];
+      const gm=GUTTER_MATERIALS[j.gutterMaterial];
+      const profileTag=gp?`<span class="pill-tag" style="background:${gm?gm.bg:'#EAF7F2'};color:${gm?gm.text:'#0F6E56'}">${gp.short}${gm?' '+gm.short:''}</span>`:'';
+      return `<div class="job-pill${isWaiting?' waiting':''}" style="background:${style.bg};color:${style.text};border-left-color:${style.border}" onclick="openJob('${j.id}')">
+        <div class="pill-top">
+          <span class="pill-num">${j.jobNum}</span>
+          <span class="pill-name">${statusIcon}${j.customer}</span>
+        </div>
+        ${profileTag?`<div class="pill-tags">${profileTag}</div>`:''}
+      </div>`;
+    }).join('');
+    const morePill=extra>0?`<div class="more-pill">+${extra} more</div>`:'';
+    return `<div class="cal-day${cell.other?' other-month':''}${isToday?' today':''}${isWeekend&&!cell.other?' weekend':''}">
+      <div class="day-num">${cell.date.getDate()}</div>${pills}${morePill}
+    </div>`;
+  }).join('');
+  renderLegend();
+}
+
+function renderLegend(){
+  const roofItems=REROOF_KEYS.map(k=>{const t=ROOF_TYPES[k];return `<div class="legend-item"><div class="legend-swatch" style="background:${t.bg};border:1.5px solid ${t.border}"></div><span>${t.label}</span></div>`;}).join('');
+  const gutterOnlySwatch=`<div class="legend-item"><div class="legend-swatch" style="background:${GUTTER_ONLY_STYLE.bg};border:1.5px solid ${GUTTER_ONLY_STYLE.border}"></div><span>Gutters Only</span></div>`;
+  const profileItems=Object.entries(GUTTER_PROFILES).map(([k,v])=>`<div class="legend-item"><span class="pill-tag" style="font-size:10px;padding:2px 7px;border-radius:3px;background:#EAF7F2;color:#0F6E56">${v.short}</span><span>${v.label}</span></div>`).join('');
+  const matItems=Object.entries(GUTTER_MATERIALS).map(([k,v])=>`<div class="legend-item"><span class="pill-tag" style="font-size:10px;padding:2px 7px;border-radius:3px;background:${v.bg};color:${v.text}">${v.short}</span><span>${v.label}</span></div>`).join('');
+  const statusItems=`
+    <div class="legend-item">
+      <div style="width:60px;height:18px;border-radius:4px;border-left:3px solid #185FA5;background:#DEEDFB;font-size:10px;font-weight:700;color:#0C447C;display:flex;align-items:center;padding:0 6px;">✓ Ready</div>
+      <span>Reroof complete — ready to install</span>
+    </div>
+    <div class="legend-item">
+      <div style="width:60px;height:18px;border-radius:4px;border-left:3px dashed #185FA5;background:#DEEDFB;font-size:10px;font-weight:700;color:#0C447C;display:flex;align-items:center;padding:0 6px;opacity:0.82;">⏳ Wait</div>
+      <span>Reroof still pending</span>
+    </div>`;
+  document.getElementById('legend').innerHTML=`
+    <div><div class="legend-group-label">Roof type (pill background)</div><div class="legend-items">${roofItems}${gutterOnlySwatch}</div></div>
+    <div><div class="legend-group-label">Gutter profile (tag)</div><div class="legend-items">${profileItems}</div></div>
+    <div><div class="legend-group-label">Gutter material (tag suffix)</div><div class="legend-items">${matItems}</div></div>
+    <div><div class="legend-group-label">Job status (border style)</div><div class="legend-items">${statusItems}</div></div>`;
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openJob(id){
+  const job=allJobs.find(j=>j.id===id); if(!job) return;
+  const style=getPillStyle(job);
+  const gp=GUTTER_PROFILES[job.gutterProfile];
+  const gm=GUTTER_MATERIALS[job.gutterMaterial];
+
+  document.getElementById('m-name').textContent=job.customer;
+  document.getElementById('m-jobnum').textContent='Job '+job.jobNum;
+
+  let badges='';
+  if(job.kind==='reroofReady'){
+    const rt=ROOF_TYPES[job.type];
+    badges+=`<span class="modal-badge" style="background:${rt.bg};color:${rt.text};border:1px solid ${rt.border}">${rt.label}</span>`;
+    badges+=`<span class="modal-badge" style="background:#C8EEE0;color:#085041;border:1px solid #1D9E75">✓ Reroof complete</span>`;
+  } else if(job.kind==='reroofWaiting'){
+    const rt=ROOF_TYPES[job.type];
+    badges+=`<span class="modal-badge" style="background:${rt.bg};color:${rt.text};border:1px solid ${rt.border}">${rt.label}</span>`;
+    badges+=`<span class="modal-badge" style="background:#EEF6F2;color:#5A9E82;border:1px dashed #A8D9C4">⏳ Awaiting reroof</span>`;
+  } else {
+    badges+=`<span class="modal-badge" style="background:${GUTTER_ONLY_STYLE.bg};color:${GUTTER_ONLY_STYLE.text};border:1px solid ${GUTTER_ONLY_STYLE.border}">Gutters Only</span>`;
+  }
+  if(gp) badges+=`<span class="modal-badge" style="background:${gm?gm.bg:'#EAF7F2'};color:${gm?gm.text:'#0F6E56'}">${gp.label}${gm?' · '+gm.label:''}</span>`;
+  document.getElementById('m-badges').innerHTML=badges;
+
+  document.getElementById('m-addr').textContent=job.address||'—';
+  document.getElementById('m-gutter-date').textContent=fmtFull(job.gutterDate);
+  document.getElementById('m-dur').textContent=job.duration||'—';
+  document.getElementById('m-gprofile').textContent=gp?gp.label:'—';
+  document.getElementById('m-gmaterial').textContent=gm?gm.label:'—';
+
+  const gsf=document.getElementById('m-gscreen-field');
+  if(job.gutterScreen){gsf.style.display='block';document.getElementById('m-gscreen').textContent=job.gutterScreen;}
+  else gsf.style.display='none';
+
+  document.getElementById('m-gmat').textContent=job.gutterMaterials||'—';
+  document.getElementById('m-notes').textContent=job.notes||'—';
+
+  const rs=document.getElementById('m-reroof-section');
+  if(job.kind!=='gutterOnly'){
+    rs.style.display='block';
+    rs.style.background=job.kind==='reroofReady'?'#EAF7F2':'#F5FAF8';
+    const titleEl=document.getElementById('m-reroof-title');
+    titleEl.textContent=job.kind==='reroofReady'?'✓ Reroof completed':'⏳ Reroof scheduled (pending)';
+    titleEl.style.color=job.kind==='reroofReady'?'#1D9E75':'#5A9E82';
+    document.getElementById('m-reroof-type').textContent=ROOF_TYPES[job.type]?.label||job.type;
+    document.getElementById('m-reroof-date').textContent=fmtFull(job.reroofDate);
+  } else {
+    rs.style.display='none';
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function handleOverlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+function changeMonth(dir){viewMonth+=dir;if(viewMonth>11){viewMonth=0;viewYear++;}if(viewMonth<0){viewMonth=11;viewYear--;}renderCalendar();}
+
+loadJobs();
+</script>
+</body>
+</html>
