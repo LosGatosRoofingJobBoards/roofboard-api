@@ -295,11 +295,11 @@ app.get('/api/jobs', (req, res) => {
     const params = [];
     if(updatedAfter){ sql += ' AND updatedAt > ?'; params.push(updatedAfter); }
     if(view==='install'){
-      sql += ' AND installDate IS NOT NULL AND installDate != ""';
-      sql += ' AND crew IS NOT NULL AND crew != "" AND crew NOT IN ("gutter","removal")';
+      sql += ' AND installDate IS NOT NULL AND installDate != \'\'';
+      sql += ' AND crew IS NOT NULL AND crew != \'\' AND crew NOT IN (\'gutter\',\'removal\')';
       if(crew){ sql += ' AND crew = ?'; params.push(crew); }
     } else if(view==='gutters'){
-      sql += ' AND gutterDate IS NOT NULL AND gutterDate != ""';
+      sql += ' AND gutterDate IS NOT NULL AND gutterDate != \'\'';
     }
     sql += ' ORDER BY jobNum ASC';
     res.json(db.prepare(sql).all(...params).map(parseJob));
