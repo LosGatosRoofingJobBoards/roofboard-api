@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────────────────────
-//  RoofBoard API Server  —  Node.js + Express + SQLite
-//  With authentication and role-based permissions
+//  RoofBoard API Server  v5.0
+//  Node.js + Express + SQLite
+//  Features: Auth, Roles, Crews, Consultants, Roof Materials,
+//            Archive, Security hardening
 // ─────────────────────────────────────────────────────────────
 const express  = require('express');
 const Database = require('better-sqlite3');
@@ -11,39 +13,131 @@ const path     = require('path');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+// ── Allowed origin (set to your Netlify URL in Railway Variables) ──
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
+// ── Security headers ──────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// ── CORS ──────────────────────────────────────────────────────
+app.use(cors({
+  origin: ALLOWED_ORIGIN === '*' ? '*' : (origin, cb) => {
+    if(!origin || origin === ALLOWED_ORIGIN) cb(null, true);
+    else cb(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET','POST','PATCH','PUT','DELETE'],
+  allowedHeaders: ['Content-Type','Authorization'],
+}));
+
+app.use(express.json({ limit: '100kb' }));
+
+// ── Rate limiting (in-memory, resets on server restart) ───────
+const loginAttempts = new Map();
+const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_ATTEMPTS   = 5;
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const rec = loginAttempts.get(ip) || { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if(now > rec.resetAt) { rec.count = 0; rec.resetAt = now + RATE_WINDOW_MS; }
+  rec.count++;
+  loginAttempts.set(ip, rec);
+  return rec.count <= MAX_ATTEMPTS;
+}
+function clearRateLimit(ip) { loginAttempts.delete(ip); }
+
+// ── Input sanitization helper ─────────────────────────────────
+function sanitize(val) {
+  if(typeof val !== 'string') return val;
+  return val.replace(/<[^>]*>/g, '').trim().slice(0, 2000);
+}
+function sanitizeJob(j) {
+  const fields = ['jobNum','customer','address','materials','gutterMaterials',
+    'notes','gutterScreen','existingRoofNotes'];
+  const out = {...j};
+  fields.forEach(f => { if(out[f]) out[f] = sanitize(out[f]); });
+  return out;
+}
+
+// ── Database ──────────────────────────────────────────────────
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'roofboard.db');
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 // ── Schema ────────────────────────────────────────────────────
 db.exec(`
+  CREATE TABLE IF NOT EXISTS roof_materials (
+    id        TEXT PRIMARY KEY,
+    name      TEXT NOT NULL UNIQUE,
+    colorBg   TEXT NOT NULL DEFAULT '#f0f0ec',
+    colorText TEXT NOT NULL DEFAULT '#444',
+    colorBorder TEXT NOT NULL DEFAULT '#ccc',
+    active    INTEGER DEFAULT 1,
+    sortOrder INTEGER DEFAULT 0,
+    createdAt TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS crews (
+    id        TEXT PRIMARY KEY,
+    name      TEXT NOT NULL,
+    type      TEXT NOT NULL CHECK(type IN ('install','gutter','removal')),
+    active    INTEGER DEFAULT 1,
+    sortOrder INTEGER DEFAULT 0,
+    createdAt TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS consultants (
+    id        TEXT PRIMARY KEY,
+    name      TEXT NOT NULL UNIQUE,
+    initials  TEXT NOT NULL,
+    active    INTEGER DEFAULT 1,
+    createdAt TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS jobs (
-    id                TEXT PRIMARY KEY,
-    jobNum            TEXT NOT NULL,
-    customer          TEXT NOT NULL,
-    address           TEXT DEFAULT '',
-    type              TEXT NOT NULL DEFAULT 'comp',
-    crew              TEXT,
-    tearoffDate       TEXT,
-    installDate       TEXT,
-    gutterDate        TEXT,
-    duration          TEXT DEFAULT '1 day',
-    gutterProfile     TEXT,
-    gutterMaterial    TEXT,
-    gutterScreen      TEXT,
-    gutterInstruction TEXT DEFAULT 'na',
-    gutterMaterials   TEXT DEFAULT '',
-    includesGutters   INTEGER DEFAULT 0,
-    reroofComplete    INTEGER DEFAULT 0,
-    warranty          INTEGER DEFAULT 0,
-    layerStack        TEXT DEFAULT '[]',
-    materials         TEXT DEFAULT '',
-    notes             TEXT DEFAULT '',
-    createdAt         TEXT NOT NULL,
-    updatedAt         TEXT NOT NULL
+    id                  TEXT PRIMARY KEY,
+    jobNum              TEXT NOT NULL,
+    customer            TEXT NOT NULL,
+    address             TEXT DEFAULT '',
+    newRoofMaterialId   TEXT,
+    existingRoofMaterialId TEXT,
+    existingDeckType    TEXT DEFAULT '',
+    newDeckType         TEXT DEFAULT '',
+    existingRoofNotes   TEXT DEFAULT '',
+    steepPitch          INTEGER DEFAULT 0,
+    removalCrewId       TEXT,
+    tearoffDate         TEXT,
+    installCrewId       TEXT,
+    installDate         TEXT,
+    gutterCrewId        TEXT,
+    gutterDate          TEXT,
+    duration            TEXT DEFAULT '1 day',
+    gutterProfile       TEXT,
+    gutterMaterial      TEXT,
+    gutterScreen        TEXT,
+    gutterInstruction   TEXT DEFAULT 'na',
+    gutterMaterials     TEXT DEFAULT '',
+    includesGutters     INTEGER DEFAULT 0,
+    reroofComplete      INTEGER DEFAULT 0,
+    warranty            INTEGER DEFAULT 0,
+    layerStack          TEXT DEFAULT '[]',
+    materials           TEXT DEFAULT '',
+    notes               TEXT DEFAULT '',
+    startDateApproval   TEXT DEFAULT 'pending',
+    consultantId        TEXT,
+    backlogCategory     TEXT DEFAULT 'regular',
+    archived            INTEGER DEFAULT 0,
+    completedAt         TEXT,
+    createdAt           TEXT NOT NULL,
+    updatedAt           TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS inspections (
@@ -75,41 +169,43 @@ db.exec(`
   );
 `);
 
-// ── Roles ─────────────────────────────────────────────────────
-// admin        — full access including user management and delete
-// scheduler    — full job access including dates, no delete, no user mgmt
-// office_staff — full job edit except scheduling dates, no delete
-// sales        — view only + edit notes field only, cannot add jobs
-
-const ROLES = ['admin','scheduler','office_staff','sales'];
-
-// ── Crypto helpers ────────────────────────────────────────────
-function newId(p='id'){ return p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
-function now(){ return new Date().toISOString(); }
-function hashPassword(password, salt){
-  return crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-}
-function generateSalt(){ return crypto.randomBytes(32).toString('hex'); }
-function generateToken(){ return crypto.randomBytes(48).toString('hex'); }
-function sessionExpiry(){
-  const d = new Date();
-  d.setHours(d.getHours()+8); // 8 hour sessions
-  return d.toISOString();
+// ── Seed default roof materials ───────────────────────────────
+const matCount = db.prepare('SELECT COUNT(*) as n FROM roof_materials').get().n;
+if(matCount === 0){
+  const defaults = [
+    { name:'Comp',        colorBg:'#FFF9C4', colorText:'#7A6800', colorBorder:'#F0C800', sort:0 },
+    { name:'Tile',        colorBg:'#FFE0B2', colorText:'#7A3800', colorBorder:'#F07800', sort:1 },
+    { name:'Metal',       colorBg:'#ECEFF1', colorText:'#37474F', colorBorder:'#90A4AE', sort:2 },
+    { name:'Wood',        colorBg:'#F5F5F5', colorText:'#555',    colorBorder:'#BDBDBD', sort:3 },
+    { name:'Flat/TPO',    colorBg:'#BBDEFB', colorText:'#0D47A1', colorBorder:'#2196F3', sort:4 },
+    { name:'Polymer',     colorBg:'#B2DFDB', colorText:'#00695C', colorBorder:'#00897B', sort:5 },
+    { name:'Gutters Only',colorBg:'#C8EEE0', colorText:'#085041', colorBorder:'#1D9E75', sort:6 },
+    { name:'Repairs',     colorBg:'#FDE6D8', colorText:'#712B13', colorBorder:'#D85A30', sort:7 },
+    { name:'Other',       colorBg:'#E8E6FD', colorText:'#3C3489', colorBorder:'#534AB7', sort:8 },
+  ];
+  const ins = db.prepare('INSERT INTO roof_materials (id,name,colorBg,colorText,colorBorder,active,sortOrder,createdAt) VALUES (?,?,?,?,?,1,?,?)');
+  defaults.forEach(m => ins.run(newId('m'), m.name, m.colorBg, m.colorText, m.colorBorder, m.sort, now()));
 }
 
-// ── Seed default admin if no users exist ──────────────────────
+// ── Seed default admin ────────────────────────────────────────
 const userCount = db.prepare('SELECT COUNT(*) as n FROM users').get().n;
 if(userCount === 0){
   const salt = generateSalt();
   const hash = hashPassword('Roofboard2024!', salt);
   db.prepare(`INSERT INTO users (id,username,passwordHash,salt,role,fullName,active,mustChangePwd,createdAt)
     VALUES (?,?,?,?,?,?,?,?,?)`).run(
-    newId('u'), 'losgatosroofingadmin', hash, salt, 'admin', 'Administrator', 1, 1, now()
+    newId('u'),'losgatosroofingadmin',hash,salt,'admin','Administrator',1,1,now()
   );
-  console.log('Default admin created: losgatosroofingadmin / Roofboard2024!');
 }
 
-// ── Parse job row ─────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
+function newId(p='id'){ return p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+function now(){ return new Date().toISOString(); }
+function hashPassword(pw,salt){ return crypto.pbkdf2Sync(pw,salt,100000,64,'sha512').toString('hex'); }
+function generateSalt(){ return crypto.randomBytes(32).toString('hex'); }
+function generateToken(){ return crypto.randomBytes(48).toString('hex'); }
+function sessionExpiry(){ const d=new Date(); d.setHours(d.getHours()+8); return d.toISOString(); }
+
 function parseJob(row){
   if(!row) return null;
   return {
@@ -117,292 +213,395 @@ function parseJob(row){
     includesGutters: !!row.includesGutters,
     reroofComplete:  !!row.reroofComplete,
     warranty:        !!row.warranty,
+    steepPitch:      !!row.steepPitch,
+    archived:        !!row.archived,
     layerStack:      JSON.parse(row.layerStack||'[]'),
   };
 }
 
 // ── Auth middleware ───────────────────────────────────────────
-function requireAuth(req, res, next){
-  const token = req.headers['authorization']?.replace('Bearer ','');
+function requireAuth(req,res,next){
+  const token=req.headers['authorization']?.replace('Bearer ','');
   if(!token) return res.status(401).json({error:'Not logged in'});
-  const session = db.prepare('SELECT * FROM sessions WHERE token=?').get(token);
+  const session=db.prepare('SELECT * FROM sessions WHERE token=?').get(token);
   if(!session) return res.status(401).json({error:'Invalid session'});
-  if(new Date(session.expiresAt) < new Date()){
+  if(new Date(session.expiresAt)<new Date()){
     db.prepare('DELETE FROM sessions WHERE token=?').run(token);
     return res.status(401).json({error:'Session expired'});
   }
-  const user = db.prepare('SELECT * FROM users WHERE id=?').get(session.userId);
+  const user=db.prepare('SELECT * FROM users WHERE id=?').get(session.userId);
   if(!user||!user.active) return res.status(401).json({error:'User not found or inactive'});
-  req.user = user;
-  req.token = token;
-  next();
+  req.user=user; req.token=token; next();
 }
-
 function requireRole(...roles){
-  return (req, res, next) => {
-    if(!roles.includes(req.user.role))
-      return res.status(403).json({error:'Permission denied'});
+  return (req,res,next)=>{
+    if(!roles.includes(req.user.role)) return res.status(403).json({error:'Permission denied'});
     next();
   };
 }
 
 // ── Auth routes ───────────────────────────────────────────────
-
-// POST /api/auth/login
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', (req,res)=>{
+  const ip = req.headers['x-forwarded-for']||req.ip||'unknown';
+  if(!checkRateLimit(ip)) return res.status(429).json({error:'Too many login attempts. Try again in 15 minutes.'});
   try {
-    const { username, password } = req.body;
+    const {username,password}=req.body;
     if(!username||!password) return res.status(400).json({error:'Username and password required'});
-    const user = db.prepare('SELECT * FROM users WHERE username=? AND active=1').get(username.toLowerCase().trim());
-    if(!user) return res.status(401).json({error:'Invalid username or password'});
-    const hash = hashPassword(password, user.salt);
-    if(hash !== user.passwordHash) return res.status(401).json({error:'Invalid username or password'});
-
-    // Clean old sessions for this user
+    const user=db.prepare('SELECT * FROM users WHERE username=? AND active=1').get(username.toLowerCase().trim());
+    if(!user){ return res.status(401).json({error:'Invalid username or password'}); }
+    const hash=hashPassword(password,user.salt);
+    if(hash!==user.passwordHash){ return res.status(401).json({error:'Invalid username or password'}); }
+    clearRateLimit(ip);
     db.prepare('DELETE FROM sessions WHERE userId=?').run(user.id);
-
-    const token = generateToken();
+    const token=generateToken();
     db.prepare('INSERT INTO sessions (token,userId,expiresAt,createdAt) VALUES (?,?,?,?)').run(
-      token, user.id, sessionExpiry(), now()
+      token,user.id,sessionExpiry(),now()
     );
-    db.prepare('UPDATE users SET lastLogin=? WHERE id=?').run(now(), user.id);
-
-    res.json({
-      token,
-      role: user.role,
-      fullName: user.fullName,
-      username: user.username,
-      mustChangePwd: !!user.mustChangePwd,
-      expiresAt: sessionExpiry(),
-    });
+    db.prepare('UPDATE users SET lastLogin=? WHERE id=?').run(now(),user.id);
+    res.json({token,role:user.role,fullName:user.fullName,username:user.username,mustChangePwd:!!user.mustChangePwd,expiresAt:sessionExpiry()});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// POST /api/auth/logout
-app.post('/api/auth/logout', requireAuth, (req, res) => {
+app.post('/api/auth/logout',requireAuth,(req,res)=>{
   db.prepare('DELETE FROM sessions WHERE token=?').run(req.token);
   res.json({ok:true});
 });
 
-// POST /api/auth/change-password
-app.post('/api/auth/change-password', requireAuth, (req, res) => {
+app.post('/api/auth/change-password',requireAuth,(req,res)=>{
   try {
-    const { currentPassword, newPassword } = req.body;
-    if(!newPassword||newPassword.length<8)
-      return res.status(400).json({error:'New password must be at least 8 characters'});
-    const user = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
-    // Skip current password check if mustChangePwd is set (first login)
+    const {currentPassword,newPassword}=req.body;
+    if(!newPassword||newPassword.length<8) return res.status(400).json({error:'Password must be at least 8 characters'});
+    const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
     if(!user.mustChangePwd){
       if(!currentPassword) return res.status(400).json({error:'Current password required'});
-      const hash = hashPassword(currentPassword, user.salt);
-      if(hash !== user.passwordHash) return res.status(401).json({error:'Current password incorrect'});
+      if(hashPassword(currentPassword,user.salt)!==user.passwordHash) return res.status(401).json({error:'Current password incorrect'});
     }
-    const newSalt = generateSalt();
-    const newHash = hashPassword(newPassword, newSalt);
-    db.prepare('UPDATE users SET passwordHash=?,salt=?,mustChangePwd=0 WHERE id=?').run(newHash,newSalt,user.id);
+    const salt=generateSalt(), hash=hashPassword(newPassword,salt);
+    db.prepare('UPDATE users SET passwordHash=?,salt=?,mustChangePwd=0 WHERE id=?').run(hash,salt,user.id);
     res.json({ok:true});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// GET /api/auth/me
-app.get('/api/auth/me', requireAuth, (req, res) => {
-  res.json({
-    id: req.user.id,
-    username: req.user.username,
-    role: req.user.role,
-    fullName: req.user.fullName,
-    mustChangePwd: !!req.user.mustChangePwd,
-  });
+app.get('/api/auth/me',requireAuth,(req,res)=>{
+  res.json({id:req.user.id,username:req.user.username,role:req.user.role,fullName:req.user.fullName,mustChangePwd:!!req.user.mustChangePwd});
 });
 
-// ── User management (admin only) ──────────────────────────────
-
-// GET /api/users
-app.get('/api/users', requireAuth, requireRole('admin'), (req, res) => {
-  const users = db.prepare('SELECT id,username,role,fullName,active,mustChangePwd,createdAt,lastLogin FROM users ORDER BY createdAt ASC').all();
+// ── Users ─────────────────────────────────────────────────────
+app.get('/api/users',requireAuth,requireRole('admin'),(req,res)=>{
+  const users=db.prepare('SELECT id,username,role,fullName,active,mustChangePwd,createdAt,lastLogin FROM users ORDER BY createdAt ASC').all();
   res.json(users.map(u=>({...u,active:!!u.active,mustChangePwd:!!u.mustChangePwd})));
 });
 
-// POST /api/users
-app.post('/api/users', requireAuth, requireRole('admin'), (req, res) => {
+app.post('/api/users',requireAuth,requireRole('admin'),(req,res)=>{
   try {
-    const { username, password, role, fullName } = req.body;
+    const {username,password,role,fullName}=req.body;
+    const VALID_ROLES=['admin','scheduler','office_staff','sales','removal_foreman','supplier'];
     if(!username||!password) return res.status(400).json({error:'Username and password required'});
-    if(!ROLES.includes(role)) return res.status(400).json({error:'Invalid role'});
+    if(!VALID_ROLES.includes(role)) return res.status(400).json({error:'Invalid role'});
     if(password.length<8) return res.status(400).json({error:'Password must be at least 8 characters'});
-    const existing = db.prepare('SELECT id FROM users WHERE username=?').get(username.toLowerCase().trim());
-    if(existing) return res.status(409).json({error:'Username already exists'});
-    const salt = generateSalt();
-    const hash = hashPassword(password, salt);
-    const id = newId('u');
-    db.prepare(`INSERT INTO users (id,username,passwordHash,salt,role,fullName,active,mustChangePwd,createdAt)
-      VALUES (?,?,?,?,?,?,?,?,?)`).run(
-      id, username.toLowerCase().trim(), hash, salt, role, fullName||'', 1, 1, now()
+    if(db.prepare('SELECT id FROM users WHERE username=?').get(username.toLowerCase().trim())) return res.status(409).json({error:'Username already exists'});
+    const salt=generateSalt(), hash=hashPassword(password,salt), id=newId('u');
+    db.prepare('INSERT INTO users (id,username,passwordHash,salt,role,fullName,active,mustChangePwd,createdAt) VALUES (?,?,?,?,?,?,?,?,?)').run(
+      id,username.toLowerCase().trim(),hash,salt,role,fullName||'',1,1,now()
     );
-    res.status(201).json({id, username:username.toLowerCase().trim(), role, fullName:fullName||'', active:true});
+    res.status(201).json({id,username:username.toLowerCase().trim(),role,fullName:fullName||'',active:true});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// PATCH /api/users/:id
-app.patch('/api/users/:id', requireAuth, requireRole('admin'), (req, res) => {
+app.patch('/api/users/:id',requireAuth,requireRole('admin'),(req,res)=>{
   try {
-    const user = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
-    if(!user) return res.status(404).json({error:'User not found'});
-    // Prevent admin from deactivating themselves
-    if(req.params.id === req.user.id && req.body.active === false)
-      return res.status(400).json({error:'Cannot deactivate your own account'});
-    const { role, fullName, active, password } = req.body;
-    let salt = user.salt, hash = user.passwordHash;
-    if(password){
-      if(password.length<8) return res.status(400).json({error:'Password must be at least 8 characters'});
-      salt = generateSalt();
-      hash = hashPassword(password, salt);
-    }
-    db.prepare(`UPDATE users SET
-      role=?,fullName=?,active=?,passwordHash=?,salt=?,mustChangePwd=?
-      WHERE id=?`).run(
-      role||user.role, fullName||user.fullName,
-      active===undefined?user.active:(active?1:0),
-      hash, salt,
-      password?1:user.mustChangePwd,
-      req.params.id
+    const user=db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
+    if(!user) return res.status(404).json({error:'Not found'});
+    if(req.params.id===req.user.id&&req.body.active===false) return res.status(400).json({error:'Cannot deactivate your own account'});
+    const {role,fullName,active,password}=req.body;
+    let salt=user.salt, hash=user.passwordHash;
+    if(password){ if(password.length<8) return res.status(400).json({error:'Password too short'}); salt=generateSalt(); hash=hashPassword(password,salt); }
+    db.prepare('UPDATE users SET role=?,fullName=?,active=?,passwordHash=?,salt=?,mustChangePwd=? WHERE id=?').run(
+      role||user.role,fullName??user.fullName,active===undefined?user.active:(active?1:0),hash,salt,password?1:user.mustChangePwd,req.params.id
     );
-    const updated = db.prepare('SELECT id,username,role,fullName,active,mustChangePwd FROM users WHERE id=?').get(req.params.id);
-    res.json({...updated,active:!!updated.active,mustChangePwd:!!updated.mustChangePwd});
+    const u=db.prepare('SELECT id,username,role,fullName,active,mustChangePwd FROM users WHERE id=?').get(req.params.id);
+    res.json({...u,active:!!u.active,mustChangePwd:!!u.mustChangePwd});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// DELETE /api/users/:id (admin only, cannot delete self)
-app.delete('/api/users/:id', requireAuth, requireRole('admin'), (req, res) => {
+app.delete('/api/users/:id',requireAuth,requireRole('admin'),(req,res)=>{
   try {
-    if(req.params.id === req.user.id)
-      return res.status(400).json({error:'Cannot delete your own account'});
-    const r = db.prepare('DELETE FROM users WHERE id=?').run(req.params.id);
-    if(r.changes===0) return res.status(404).json({error:'User not found'});
+    if(req.params.id===req.user.id) return res.status(400).json({error:'Cannot delete your own account'});
+    const r=db.prepare('DELETE FROM users WHERE id=?').run(req.params.id);
+    if(r.changes===0) return res.status(404).json({error:'Not found'});
     res.json({deleted:req.params.id});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// ── Jobs ──────────────────────────────────────────────────────
-// TV boards call GET /api/jobs with no auth — read only, no token needed
-// All write operations require auth + role checks
-
-// GET /api/jobs — public read (TV boards use this)
-app.get('/api/jobs', (req, res) => {
+// ── Crews ─────────────────────────────────────────────────────
+app.get('/api/crews',(req,res)=>{
   try {
-    const { view, crew, updatedAfter } = req.query;
-    let sql = 'SELECT * FROM jobs WHERE 1=1';
-    const params = [];
-    if(updatedAfter){ sql += ' AND updatedAt > ?'; params.push(updatedAfter); }
+    const {type}=req.query;
+    let sql='SELECT * FROM crews WHERE active=1';
+    const params=[];
+    if(type){ sql+=' AND type=?'; params.push(type); }
+    sql+=' ORDER BY sortOrder ASC, name ASC';
+    res.json(db.prepare(sql).all(...params));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/crews',requireAuth,requireRole('admin','scheduler'),(req,res)=>{
+  try {
+    const {name,type,sortOrder}=req.body;
+    if(!name||!type) return res.status(400).json({error:'Name and type required'});
+    if(!['install','gutter','removal'].includes(type)) return res.status(400).json({error:'Invalid type'});
+    const id=newId('cr');
+    db.prepare('INSERT INTO crews (id,name,type,active,sortOrder,createdAt) VALUES (?,?,?,1,?,?)').run(
+      id,sanitize(name),type,sortOrder||0,now()
+    );
+    res.status(201).json(db.prepare('SELECT * FROM crews WHERE id=?').get(id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/crews/:id',requireAuth,requireRole('admin','scheduler'),(req,res)=>{
+  try {
+    const crew=db.prepare('SELECT * FROM crews WHERE id=?').get(req.params.id);
+    if(!crew) return res.status(404).json({error:'Not found'});
+    const {name,active,sortOrder}=req.body;
+    db.prepare('UPDATE crews SET name=?,active=?,sortOrder=? WHERE id=?').run(
+      sanitize(name)||crew.name,active===undefined?crew.active:(active?1:0),sortOrder??crew.sortOrder,req.params.id
+    );
+    res.json(db.prepare('SELECT * FROM crews WHERE id=?').get(req.params.id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// ── Roof Materials ────────────────────────────────────────────
+app.get('/api/roof-materials',(req,res)=>{
+  try {
+    res.json(db.prepare('SELECT * FROM roof_materials WHERE active=1 ORDER BY sortOrder ASC, name ASC').all());
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/roof-materials',requireAuth,requireRole('admin','scheduler','office_staff'),(req,res)=>{
+  try {
+    const {name,colorBg,colorText,colorBorder}=req.body;
+    if(!name) return res.status(400).json({error:'Name required'});
+    const trimmed=sanitize(name);
+    const existing=db.prepare('SELECT * FROM roof_materials WHERE name=?').get(trimmed);
+    if(existing){ db.prepare('UPDATE roof_materials SET active=1 WHERE id=?').run(existing.id); return res.json(db.prepare('SELECT * FROM roof_materials WHERE id=?').get(existing.id)); }
+    const id=newId('m');
+    const maxSort=db.prepare('SELECT MAX(sortOrder) as m FROM roof_materials').get().m||0;
+    db.prepare('INSERT INTO roof_materials (id,name,colorBg,colorText,colorBorder,active,sortOrder,createdAt) VALUES (?,?,?,?,?,1,?,?)').run(
+      id,trimmed,colorBg||'#E8E6FD',colorText||'#3C3489',colorBorder||'#534AB7',maxSort+1,now()
+    );
+    res.status(201).json(db.prepare('SELECT * FROM roof_materials WHERE id=?').get(id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/roof-materials/:id',requireAuth,requireRole('admin'),(req,res)=>{
+  try {
+    const mat=db.prepare('SELECT * FROM roof_materials WHERE id=?').get(req.params.id);
+    if(!mat) return res.status(404).json({error:'Not found'});
+    const {name,colorBg,colorText,colorBorder,active,sortOrder}=req.body;
+    db.prepare('UPDATE roof_materials SET name=?,colorBg=?,colorText=?,colorBorder=?,active=?,sortOrder=? WHERE id=?').run(
+      sanitize(name)||mat.name,colorBg||mat.colorBg,colorText||mat.colorText,colorBorder||mat.colorBorder,
+      active===undefined?mat.active:(active?1:0),sortOrder??mat.sortOrder,req.params.id
+    );
+    res.json(db.prepare('SELECT * FROM roof_materials WHERE id=?').get(req.params.id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// ── Consultants ───────────────────────────────────────────────
+app.get('/api/consultants',(req,res)=>{
+  try { res.json(db.prepare('SELECT * FROM consultants WHERE active=1 ORDER BY name ASC').all()); }
+  catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/consultants',requireAuth,requireRole('admin','scheduler','office_staff'),(req,res)=>{
+  try {
+    const name=sanitize(req.body.name||'');
+    if(!name) return res.status(400).json({error:'Name required'});
+    const initials=name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,3);
+    const existing=db.prepare('SELECT * FROM consultants WHERE name=?').get(name);
+    if(existing){ db.prepare('UPDATE consultants SET active=1 WHERE id=?').run(existing.id); return res.json({...existing,active:true}); }
+    const id=newId('c');
+    db.prepare('INSERT INTO consultants (id,name,initials,active,createdAt) VALUES (?,?,?,1,?)').run(id,name,initials,now());
+    res.status(201).json(db.prepare('SELECT * FROM consultants WHERE id=?').get(id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.delete('/api/consultants/:id',requireAuth,requireRole('admin'),(req,res)=>{
+  try { db.prepare('UPDATE consultants SET active=0 WHERE id=?').run(req.params.id); res.json({deleted:req.params.id}); }
+  catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// ── Jobs — read (public for TV boards) ───────────────────────
+app.get('/api/jobs',(req,res)=>{
+  try {
+    const {view,crewId,updatedAfter,archived}=req.query;
+    let sql='SELECT * FROM jobs WHERE 1=1';
+    const params=[];
+    // By default only return active (non-archived) jobs
+    if(archived==='1'){ sql+=' AND archived=1'; }
+    else { sql+=' AND archived=0'; }
+    if(updatedAfter){ sql+=' AND updatedAt > ?'; params.push(updatedAfter); }
     if(view==='install'){
-      sql += ' AND installDate IS NOT NULL AND installDate != \'\'';
-      sql += ' AND crew IS NOT NULL AND crew != \'\' AND crew NOT IN (\'gutter\',\'removal\')';
-      if(crew){ sql += ' AND crew = ?'; params.push(crew); }
+      sql+=' AND installDate IS NOT NULL AND installDate != \'\'';
+      sql+=' AND installCrewId IS NOT NULL AND installCrewId != \'\'';
+      if(crewId){ sql+=' AND installCrewId = ?'; params.push(crewId); }
     } else if(view==='gutters'){
-      sql += ' AND gutterDate IS NOT NULL AND gutterDate != \'\'';
+      sql+=' AND gutterDate IS NOT NULL AND gutterDate != \'\'';
+      if(crewId){ sql+=' AND gutterCrewId = ?'; params.push(crewId); }
+    } else if(view==='removal'){
+      if(crewId){ sql+=' AND removalCrewId = ?'; params.push(crewId); }
     }
-    sql += ' ORDER BY jobNum ASC';
+    sql+=' ORDER BY jobNum ASC';
     res.json(db.prepare(sql).all(...params).map(parseJob));
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// GET /api/jobs/:id — public read
-app.get('/api/jobs/:id', (req, res) => {
+app.get('/api/jobs/:id',(req,res)=>{
   try {
-    const row = db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
+    const row=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
     if(!row) return res.status(404).json({error:'Not found'});
     res.json(parseJob(row));
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// POST /api/jobs — admin, scheduler, office_staff only
-app.post('/api/jobs', requireAuth, requireRole('admin','scheduler','office_staff'), (req, res) => {
+// ── Jobs — write (auth required) ─────────────────────────────
+const CAN_ADD=['admin','scheduler','office_staff'];
+const CAN_EDIT_ALL=['admin','scheduler','office_staff'];
+const CAN_EDIT_DATES=['admin','scheduler'];
+const CAN_EDIT_NOTES=['admin','scheduler','office_staff','sales'];
+const CAN_EDIT_APPROVAL=['admin','scheduler','office_staff','sales'];
+const CAN_ASSIGN_REMOVAL=['admin','scheduler','office_staff','removal_foreman'];
+const CAN_COMPLETE=['admin','scheduler','office_staff'];
+const CAN_ARCHIVE=['admin','scheduler'];
+const CAN_DELETE=['admin'];
+
+app.post('/api/jobs',requireAuth,(req,res)=>{
   try {
-    const j = req.body;
+    if(!CAN_ADD.includes(req.user.role)) return res.status(403).json({error:'Permission denied'});
+    const j=sanitizeJob(req.body);
     if(!j.jobNum||!j.customer) return res.status(400).json({error:'jobNum and customer required'});
-    const id = j.id || newId('j');
-    const ts = now();
+    const id=j.id||newId('j'), ts=now();
     db.prepare(`INSERT INTO jobs (
-      id,jobNum,customer,address,type,crew,
-      tearoffDate,installDate,gutterDate,duration,
-      gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
+      id,jobNum,customer,address,newRoofMaterialId,existingRoofMaterialId,
+      existingDeckType,newDeckType,existingRoofNotes,steepPitch,
+      removalCrewId,tearoffDate,installCrewId,installDate,gutterCrewId,gutterDate,
+      duration,gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
       includesGutters,reroofComplete,warranty,layerStack,materials,notes,
-      createdAt,updatedAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-      id,j.jobNum,j.customer,j.address||'',j.type||'comp',j.crew||null,
-      j.tearoffDate||null,j.installDate||null,j.gutterDate||null,j.duration||'1 day',
+      startDateApproval,consultantId,backlogCategory,archived,createdAt,updatedAt
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
+      id,j.jobNum,j.customer,j.address||'',
+      j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
+      j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
+      j.steepPitch?1:0,
+      j.removalCrewId||null,j.tearoffDate||null,
+      j.installCrewId||null,j.installDate||null,
+      j.gutterCrewId||null,j.gutterDate||null,
+      j.duration||'1 day',
       j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
-      JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',ts,ts
+      JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
+      j.startDateApproval||'pending',j.consultantId||null,
+      j.backlogCategory||'regular',ts,ts
     );
     res.status(201).json(parseJob(db.prepare('SELECT * FROM jobs WHERE id=?').get(id)));
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// PATCH /api/jobs/:id — role-based field restrictions enforced here
-app.patch('/api/jobs/:id', requireAuth, (req, res) => {
+app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
   try {
-    const role = req.user.role;
-    // Sales can only edit notes
-    if(role==='sales'){
-      const allowed = ['notes'];
-      const attempted = Object.keys(req.body).filter(k=>!allowed.includes(k));
-      if(attempted.length>0)
-        return res.status(403).json({error:'Sales role can only edit notes'});
-    }
-    // Office staff cannot edit scheduling dates
-    if(role==='office_staff'){
-      const restricted = ['tearoffDate','installDate','gutterDate'];
-      const attempted = Object.keys(req.body).filter(k=>restricted.includes(k));
-      if(attempted.length>0)
-        return res.status(403).json({error:'Office staff cannot edit scheduling dates'});
-    }
-    // Viewers cannot edit anything (shouldn't reach here but double-check)
-    if(!['admin','scheduler','office_staff','sales'].includes(role))
-      return res.status(403).json({error:'Permission denied'});
-
-    const existing = db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
+    const role=req.user.role;
+    const body=req.body;
+    const existing=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
     if(!existing) return res.status(404).json({error:'Not found'});
-    const j = {...parseJob(existing),...req.body};
+
+    // Supplier — no edits
+    if(role==='supplier') return res.status(403).json({error:'Permission denied'});
+
+    // Removal foreman — only removalCrewId
+    if(role==='removal_foreman'){
+      const allowed=['removalCrewId'];
+      const bad=Object.keys(body).filter(k=>!allowed.includes(k));
+      if(bad.length>0) return res.status(403).json({error:'Removal foreman can only assign removal crew'});
+    }
+
+    // Sales / RC — only notes, approval, consultantId
+    if(role==='sales'){
+      const allowed=['notes','startDateApproval','consultantId'];
+      const bad=Object.keys(body).filter(k=>!allowed.includes(k));
+      if(bad.length>0) return res.status(403).json({error:'Roofing Consultant can only edit notes and approval'});
+    }
+
+    // Office staff — no scheduling dates
+    if(role==='office_staff'){
+      const restricted=['tearoffDate','installDate','gutterDate'];
+      const bad=Object.keys(body).filter(k=>restricted.includes(k));
+      if(bad.length>0) return res.status(403).json({error:'Office staff cannot edit scheduling dates'});
+    }
+
+    const j={...parseJob(existing),...sanitizeJob(body)};
     db.prepare(`UPDATE jobs SET
-      jobNum=?,customer=?,address=?,type=?,crew=?,
-      tearoffDate=?,installDate=?,gutterDate=?,duration=?,
-      gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
+      jobNum=?,customer=?,address=?,newRoofMaterialId=?,existingRoofMaterialId=?,
+      existingDeckType=?,newDeckType=?,existingRoofNotes=?,steepPitch=?,
+      removalCrewId=?,tearoffDate=?,installCrewId=?,installDate=?,gutterCrewId=?,gutterDate=?,
+      duration=?,gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
       includesGutters=?,reroofComplete=?,warranty=?,layerStack=?,materials=?,notes=?,
-      updatedAt=?
+      startDateApproval=?,consultantId=?,backlogCategory=?,updatedAt=?
     WHERE id=?`).run(
-      j.jobNum,j.customer,j.address||'',j.type||'comp',j.crew||null,
-      j.tearoffDate||null,j.installDate||null,j.gutterDate||null,j.duration||'1 day',
+      j.jobNum,j.customer,j.address||'',
+      j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
+      j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
+      j.steepPitch?1:0,
+      j.removalCrewId||null,j.tearoffDate||null,
+      j.installCrewId||null,j.installDate||null,
+      j.gutterCrewId||null,j.gutterDate||null,
+      j.duration||'1 day',
       j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
       JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
-      now(),req.params.id
+      j.startDateApproval||'pending',j.consultantId||null,
+      j.backlogCategory||'regular',now(),req.params.id
     );
     res.json(parseJob(db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id)));
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
-// DELETE /api/jobs/:id — admin only
-app.delete('/api/jobs/:id', requireAuth, requireRole('admin'), (req, res) => {
+// Mark as complete → archive
+app.post('/api/jobs/:id/complete',requireAuth,(req,res)=>{
   try {
-    const r = db.prepare('DELETE FROM jobs WHERE id=?').run(req.params.id);
+    if(!CAN_COMPLETE.includes(req.user.role)) return res.status(403).json({error:'Permission denied'});
+    db.prepare('UPDATE jobs SET archived=1,completedAt=?,updatedAt=? WHERE id=?').run(now(),now(),req.params.id);
+    res.json({ok:true,completedAt:now()});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// Unarchive
+app.post('/api/jobs/:id/unarchive',requireAuth,(req,res)=>{
+  try {
+    if(!CAN_ARCHIVE.includes(req.user.role)) return res.status(403).json({error:'Permission denied'});
+    db.prepare('UPDATE jobs SET archived=0,completedAt=NULL,updatedAt=? WHERE id=?').run(now(),req.params.id);
+    res.json({ok:true});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// Delete — admin only
+app.delete('/api/jobs/:id',requireAuth,requireRole('admin'),(req,res)=>{
+  try {
+    const r=db.prepare('DELETE FROM jobs WHERE id=?').run(req.params.id);
     if(r.changes===0) return res.status(404).json({error:'Not found'});
     res.json({deleted:req.params.id});
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
 // ── Inspections ───────────────────────────────────────────────
-app.get('/api/jobs/:jobId/inspections', (req, res) => {
-  try {
-    res.json(db.prepare('SELECT * FROM inspections WHERE jobId=? ORDER BY sortOrder').all(req.params.jobId));
-  } catch(e){ res.status(500).json({error:e.message}); }
+app.get('/api/jobs/:jobId/inspections',(req,res)=>{
+  try { res.json(db.prepare('SELECT * FROM inspections WHERE jobId=? ORDER BY sortOrder').all(req.params.jobId)); }
+  catch(e){ res.status(500).json({error:e.message}); }
 });
 
-app.put('/api/jobs/:jobId/inspections', requireAuth, requireRole('admin','scheduler','office_staff'), (req, res) => {
+app.put('/api/jobs/:jobId/inspections',requireAuth,requireRole('admin','scheduler','office_staff'),(req,res)=>{
   try {
-    const jobId = req.params.jobId;
+    const jobId=req.params.jobId;
     if(!Array.isArray(req.body)) return res.status(400).json({error:'Expected array'});
     db.transaction(()=>{
       db.prepare('DELETE FROM inspections WHERE jobId=?').run(jobId);
@@ -418,8 +617,8 @@ app.put('/api/jobs/:jobId/inspections', requireAuth, requireRole('admin','schedu
 });
 
 // ── Health ────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
-  res.json({status:'ok', jobs:db.prepare('SELECT COUNT(*) as n FROM jobs').get().n});
+app.get('/api/health',(_req,res)=>{
+  res.json({status:'ok',jobs:db.prepare('SELECT COUNT(*) as n FROM jobs WHERE archived=0').get().n});
 });
 
-app.listen(PORT, ()=>console.log(`RoofBoard API on port ${PORT}`));
+app.listen(PORT,()=>console.log(`RoofBoard API v5 on port ${PORT}`));
