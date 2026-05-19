@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 
 // ── API endpoint ── change after Railway deployment ───────────
-const RB_API = 'lgrroofboard-api-production.up.railway.app';
+const RB_API = 'https://lgrroofboard-api-production.up.railway.app';
 
 // ── Deck types (fixed list) ───────────────────────────────────
 const DECK_TYPES = [
