@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RoofBoard — Crews</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="roofboard_config.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; color: #111; }
+.header { display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 20px; flex-wrap: wrap; gap: 8px; }
+.logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+.logo span { color: #185FA5; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; border: none; cursor: pointer; white-space: nowrap; }
+.btn-primary { background: #185FA5; color: #fff; }
+.btn-primary:hover { background: #124d8a; }
+.btn-ghost { background: #f0f0ec; color: #444; border: 0.5px solid #ccc; }
+.btn-ghost:hover { background: #e8e8e4; }
+.content { max-width: 900px; margin: 24px auto; padding: 0 16px; display: flex; flex-direction: column; gap: 24px; }
+.section { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; overflow: hidden; }
+.section-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid #eee; flex-wrap: wrap; gap: 8px; }
+.section-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.crew-type-dot { width: 10px; height: 10px; border-radius: 50%; }
+.crew-list { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.crew-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: #f8f8f5; border: 0.5px solid #eee; gap: 10px; }
+.crew-item.inactive { opacity: 0.5; }
+.crew-name { font-size: 13px; font-weight: 600; flex: 1; }
+.crew-inactive-tag { font-size: 10px; color: #aaa; background: #ebebeb; padding: 2px 7px; border-radius: 8px; }
+.crew-actions { display: flex; gap: 5px; }
+.icon-btn { width: 30px; height: 30px; border-radius: 6px; border: 0.5px solid #ddd; background: #fff; color: #666; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+.icon-btn:hover { color: #111; background: #f0f0f0; }
+.icon-btn.deactivate:hover { background: #FDE6D8; color: #D85A30; }
+.empty-state { padding: 20px; text-align: center; color: #bbb; font-size: 13px; font-style: italic; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 420px; max-width: 98vw; }
+.modal-hdr { padding: 16px 20px; border-bottom: 0.5px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 15px; font-weight: 700; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-ftr { padding: 14px 20px; border-top: 0.5px solid #eee; display: flex; justify-content: flex-end; gap: 8px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+label.lbl { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+input.fi, select.fi { padding: 10px 12px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #111; outline: none; width: 100%; }
+input.fi:focus { border-color: #185FA5; }
+.err { font-size: 12px; font-weight: 600; color: #D85A30; display: none; padding: 8px; background: #FEF0E6; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">Roof<span>Board</span></div>
+    <span style="font-size:12px;font-weight:700;color:#fff;background:#185FA5;padding:3px 11px;border-radius:12px;">Crews</span>
+  </div>
+  <div class="header-right">
+    <span id="user-chip" style="font-size:12px;color:#555;background:#f0f0ec;padding:4px 10px;border-radius:10px;"></span>
+    <button class="btn btn-ghost" onclick="window.location.href='roofboard_database.html'"><i class="ti ti-arrow-left"></i> Database</button>
+    <button class="btn btn-ghost" onclick="logout()"><i class="ti ti-logout"></i> Sign out</button>
+  </div>
+</div>
+
+<div class="content">
+  <!-- Install Crews -->
+  <div class="section">
+    <div class="section-hdr">
+      <div class="section-title">
+        <span class="crew-type-dot" style="background:#185FA5"></span>
+        Install Crews
+      </div>
+      <button class="btn btn-primary" onclick="openAdd('install')"><i class="ti ti-plus"></i> Add Install Crew</button>
+    </div>
+    <div class="crew-list" id="install-list">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Gutter Crews -->
+  <div class="section">
+    <div class="section-hdr">
+      <div class="section-title">
+        <span class="crew-type-dot" style="background:#1D9E75"></span>
+        Gutter Crews
+      </div>
+      <button class="btn btn-primary" onclick="openAdd('gutter')"><i class="ti ti-plus"></i> Add Gutter Crew</button>
+    </div>
+    <div class="crew-list" id="gutter-list">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Removal Crews -->
+  <div class="section">
+    <div class="section-hdr">
+      <div class="section-title">
+        <span class="crew-type-dot" style="background:#D85A30"></span>
+        Removal Crews
+      </div>
+      <button class="btn btn-primary" onclick="openAdd('removal')"><i class="ti ti-plus"></i> Add Removal Crew</button>
+    </div>
+    <div class="crew-list" id="removal-list">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="overlay" id="crew-modal" onclick="maybeClose(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">Add Crew</div>
+      <button class="icon-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <input type="hidden" id="edit-type">
+      <div class="form-group">
+        <label class="lbl">Foreman Name *</label>
+        <input type="text" class="fi" id="f-name" placeholder="e.g. Carlos Martinez" onkeydown="if(event.key==='Enter')saveCrew()">
+      </div>
+      <div class="err" id="modal-err"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-crew-btn" onclick="saveCrew()"><i class="ti ti-device-floppy"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function getToken(){ return localStorage.getItem('rb_token'); }
+async function authFetch(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(RB_API+path,opts);
+  if(r.status===401){logout();throw new Error('Unauth');}
+  return r;
+}
+
+let allCrews=[];
+
+async function loadCrews(){
+  try {
+    const me=await (await authFetch('GET','/api/auth/me')).json();
+    document.getElementById('user-chip').textContent=(me.fullName||me.username)+' · '+(ROLE_LABELS[me.role]||me.role);
+    const r=await fetch(RB_API+'/api/crews');
+    // Include inactive too — fetch all
+    const r2=await authFetch('GET','/api/crews?includeInactive=1');
+    allCrews=await r2.json().catch(async()=>(await r.json()));
+    // Fallback: just get active
+    if(!Array.isArray(allCrews)) allCrews=await (await fetch(RB_API+'/api/crews')).json();
+    renderCrews();
+  } catch(e){ if(e.message!=='Unauth') console.error(e); }
+}
+
+function renderCrews(){
+  ['install','gutter','removal'].forEach(type=>{
+    const list=document.getElementById(type+'-list');
+    const crews=allCrews.filter(c=>c.type===type).sort((a,b)=>a.sortOrder-b.sortOrder||a.name.localeCompare(b.name));
+    if(!crews.length){ list.innerHTML='<div class="empty-state">No '+type+' crews yet — add one above.</div>'; return; }
+    list.innerHTML=crews.map(c=>`
+      <div class="crew-item${c.active?'':' inactive'}">
+        <span class="crew-name">${c.name}${!c.active?'<span class="crew-inactive-tag" style="margin-left:8px">Inactive</span>':''}</span>
+        <div class="crew-actions">
+          <div class="icon-btn" onclick="openEdit('${c.id}','${c.name.replace(/'/g,"\\'")}','${c.type}')" title="Rename"><i class="ti ti-edit"></i></div>
+          <div class="icon-btn deactivate" onclick="toggleActive('${c.id}',${c.active})" title="${c.active?'Deactivate':'Activate'}">
+            <i class="ti ti-${c.active?'eye-off':'eye'}"></i>
+          </div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function openAdd(type){
+  document.getElementById('modal-title').textContent='Add '+type.charAt(0).toUpperCase()+type.slice(1)+' Crew';
+  document.getElementById('edit-id').value='';
+  document.getElementById('edit-type').value=type;
+  document.getElementById('f-name').value='';
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('crew-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(),100);
+}
+function openEdit(id,name,type){
+  document.getElementById('modal-title').textContent='Rename Crew';
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-type').value=type;
+  document.getElementById('f-name').value=name;
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('crew-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-name').focus(),100);
+}
+
+async function saveCrew(){
+  const eid=document.getElementById('edit-id').value;
+  const type=document.getElementById('edit-type').value;
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){showErr('Foreman name is required.');return;}
+  const btn=document.getElementById('save-crew-btn');
+  btn.disabled=true;
+  try {
+    let r;
+    if(eid) r=await authFetch('PATCH',`/api/crews/${eid}`,{name});
+    else    r=await authFetch('POST','/api/crews',{name,type});
+    const data=await r.json();
+    if(!r.ok){showErr(data.error||'Save failed');btn.disabled=false;return;}
+    // Update local
+    if(eid){ const i=allCrews.findIndex(c=>c.id===eid); if(i!==-1) allCrews[i]=data; }
+    else allCrews.push(data);
+    closeModal(); renderCrews();
+  } catch(e){ if(e.message!=='Unauth'){showErr('Save failed: '+e.message);} }
+  btn.disabled=false;
+}
+
+async function toggleActive(id,currently){
+  try {
+    const r=await authFetch('PATCH',`/api/crews/${id}`,{active:!currently});
+    const data=await r.json();
+    if(!r.ok){alert(data.error||'Update failed');return;}
+    const i=allCrews.findIndex(c=>c.id===id);
+    if(i!==-1) allCrews[i]=data;
+    renderCrews();
+  } catch(e){ if(e.message!=='Unauth') alert('Update failed'); }
+}
+
+function showErr(msg){ const e=document.getElementById('modal-err');e.textContent=msg;e.style.display='block'; }
+function closeModal(){ document.getElementById('crew-modal').classList.remove('open'); }
+function maybeClose(e){ if(e.target===document.getElementById('crew-modal')) closeModal(); }
+
+function logout(){
+  try{fetch(RB_API+'/api/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});}catch(e){}
+  ['rb_token','rb_role','rb_name','rb_expires'].forEach(k=>localStorage.removeItem(k));
+  window.location.href='roofboard_login.html';
+}
+
+const token=localStorage.getItem('rb_token'),expires=localStorage.getItem('rb_expires'),role=localStorage.getItem('rb_role');
+if(!token||!expires||new Date(expires)<=new Date()) window.location.href='roofboard_login.html';
+else if(!['admin','scheduler'].includes(role)) window.location.href='roofboard_database.html';
+else loadCrews();
+</script>
+</body>
+</html>

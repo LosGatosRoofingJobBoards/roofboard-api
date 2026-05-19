@@ -2,146 +2,178 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>RoofBoard — Job Database</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="roofboard_config.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; color: #111; }
 .app { display: flex; flex-direction: column; min-height: 100vh; }
-.header { display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 20px; flex-wrap: wrap; gap: 8px; }
-.logo { font-size: 18px; font-weight: 600; color: #111; letter-spacing: -0.5px; }
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 16px; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 20; }
+.logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
 .logo span { color: #185FA5; }
-.header-tag { font-size: 12px; font-weight: 700; color: #fff; background: #185FA5; padding: 3px 11px; border-radius: 12px; }
-.header-right { display: flex; align-items: center; gap: 8px; }
-.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; display: inline-block; animation: pulse 2s infinite; }
+.header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.user-chip { font-size: 11px; color: #555; background: #f0f0ec; padding: 4px 8px; border-radius: 8px; display: flex; align-items: center; gap: 4px; }
+.role-tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; display: inline-block; animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
-.user-chip { font-size: 12px; color: #555; background: #f0f0ec; padding: 4px 10px; border-radius: 10px; display: flex; align-items: center; gap: 5px; }
-.role-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; }
-.role-admin        { background: #DEEDFB; color: #0C447C; }
-.role-scheduler    { background: #E8E6FD; color: #3C3489; }
-.role-office_staff { background: #DCF0CC; color: #27500A; }
-.role-sales        { background: #F8E9C8; color: #633806; }
-.toolbar { background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 10px 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.search-wrap { position: relative; flex: 1; min-width: 160px; }
-.search-wrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px; pointer-events: none; }
-.search-input { width: 100%; padding: 7px 10px 7px 30px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; }
+/* Toolbar */
+.toolbar { background: #fff; border-bottom: 0.5px solid #e0e0e0; padding: 8px 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 140px; }
+.search-wrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 13px; pointer-events: none; }
+.search-input { width: 100%; padding: 8px 8px 8px 28px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; }
 .search-input:focus { border-color: #185FA5; background: #fff; }
-select.flt { padding: 7px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; cursor: pointer; }
-.btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; border: none; cursor: pointer; white-space: nowrap; }
+select.flt { padding: 8px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; cursor: pointer; }
+.btn { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; border: none; cursor: pointer; white-space: nowrap; }
 .btn-primary { background: #185FA5; color: #fff; }
 .btn-primary:hover { background: #124d8a; }
-.btn-ghost { background: #f0f0ec; color: #444; border: 0.5px solid #ccc; }
+.btn-success { background: #1D9E75; color: #fff; }
+.btn-success:hover { background: #178a65; }
+.btn-warning { background: #F0A500; color: #fff; }
+.btn-warning:hover { background: #d49200; }
+.btn-danger  { background: #D85A30; color: #fff; }
+.btn-danger:hover { background: #b84b28; }
+.btn-ghost   { background: #f0f0ec; color: #444; border: 0.5px solid #ccc; }
 .btn-ghost:hover { background: #e8e8e4; }
-.stat-pills { display: flex; gap: 5px; flex-wrap: wrap; }
-.stat-pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; }
+.stat-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.stat-pill  { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+/* Table */
 .table-wrap { flex: 1; overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 thead { position: sticky; top: 0; z-index: 10; }
-th { background: #f0f0ec; border-bottom: 1px solid #ddd; padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; cursor: pointer; user-select: none; }
+th { background: #f0f0ec; border-bottom: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; cursor: pointer; user-select: none; }
 th:hover { color: #555; }
-td { padding: 8px 12px; border-bottom: 0.5px solid #eee; vertical-align: middle; white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 0.5px solid #eee; vertical-align: middle; white-space: nowrap; }
 tr:hover td { background: #f8f8f5; cursor: pointer; }
+tr.archived-row td { opacity: 0.55; font-style: italic; }
 .no-data { text-align: center; padding: 60px 20px; color: #bbb; }
 .no-data i { font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.3; }
 .job-num { font-weight: 800; color: #185FA5; }
 .cust-name { font-weight: 600; }
-.addr-cell { color: #888; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
-.badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
-.icon-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #ddd; background: #f8f8f5; color: #666; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+.addr-cell { color: #888; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; white-space: nowrap; }
+.icon-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #ddd; background: #f8f8f5; color: #666; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
 .icon-btn:hover { background: #fff; color: #111; }
-.icon-btn.del:hover { background: #FDE6D8; color: #D85A30; border-color: #E8856A; }
-.actions { display: flex; gap: 4px; }
+.icon-btn.del:hover { background: #FDE6D8; color: #D85A30; }
+.actions { display: flex; gap: 3px; }
 .board-dots { display: flex; gap: 3px; align-items: center; }
-.board-dot { width: 8px; height: 8px; border-radius: 50%; }
-.bd-removal { background: #D85A30; }
-.bd-install  { background: #185FA5; }
-.bd-gutters  { background: #1D9E75; }
-.bd-off      { background: #e0e0e0; }
-.pager { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #fff; border-top: 0.5px solid #eee; font-size: 12px; color: #888; }
-.page-btns { display: flex; gap: 4px; }
+.board-dot { width: 7px; height: 7px; border-radius: 50%; }
+.pager { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #fff; border-top: 0.5px solid #eee; font-size: 12px; color: #888; flex-wrap: wrap; gap: 6px; }
+.page-btns { display: flex; gap: 3px; }
 .page-btn { min-width: 28px; height: 28px; padding: 0 6px; border-radius: 6px; border: 0.5px solid #ddd; background: #f8f8f5; color: #555; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 600; }
 .page-btn:hover { background: #fff; }
 .page-btn.active { background: #185FA5; color: #fff; border-color: #185FA5; }
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
+/* Overlay / Modal */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 50; align-items: flex-start; justify-content: center; padding: 12px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .overlay.open { display: flex; }
-.modal { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; width: 680px; max-width: 98vw; margin: auto; }
-.modal-hdr { padding: 16px 20px; border-bottom: 0.5px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+.modal { background: #fff; border-radius: 12px; width: 700px; max-width: 98vw; margin: auto; }
+.modal-hdr { padding: 14px 18px; border-bottom: 0.5px solid #eee; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; border-radius: 12px 12px 0 0; }
 .modal-title { font-size: 15px; font-weight: 700; }
-.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; max-height: 80vh; overflow-y: auto; }
-.modal-ftr { padding: 14px 20px; border-top: 0.5px solid #eee; display: flex; justify-content: flex-end; gap: 8px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.modal-ftr { padding: 12px 18px; border-top: 0.5px solid #eee; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-row.cols3 { grid-template-columns: 1fr 1fr 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 4px; }
 .form-group.full { grid-column: 1/-1; }
 label.lbl { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-input.fi, select.fi, textarea.fi { padding: 8px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; color: #111; outline: none; width: 100%; }
+input.fi, select.fi, textarea.fi { padding: 9px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #111; outline: none; width: 100%; -webkit-appearance: none; }
 input.fi:focus, select.fi:focus, textarea.fi:focus { border-color: #185FA5; }
-input.fi:disabled, select.fi:disabled, textarea.fi:disabled { background: #f8f8f5; color: #aaa; cursor: not-allowed; }
-textarea.fi { resize: vertical; min-height: 58px; }
-.sec-div { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.sec-div.blue   { background: #EAF2FB; color: #185FA5; }
-.sec-div.green  { background: #EAF7F2; color: #0F6E56; }
-.sec-div.orange { background: #FEF0E6; color: #894020; }
-.sec-div.purple { background: #F0EBF8; color: #5A3F88; }
-.sec-div.gray   { background: #f0f0ec; color: #666; }
-.locked-notice { font-size: 11px; color: #aaa; font-style: italic; display: flex; align-items: center; gap: 4px; }
-.sched-box { background: #F8F9FA; border: 0.5px solid #e4e4e0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-.sched-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.sched-item { display: flex; flex-direction: column; gap: 4px; }
-.sched-board-label { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
-.sched-board-dot { width: 7px; height: 7px; border-radius: 50%; }
+input.fi:disabled, select.fi:disabled, textarea.fi:disabled { background: #f8f8f5; color: #bbb; cursor: not-allowed; }
+textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
+.sec-div { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.sec-blue   { background: #EAF2FB; color: #185FA5; }
+.sec-green  { background: #EAF7F2; color: #0F6E56; }
+.sec-orange { background: #FEF0E6; color: #894020; }
+.sec-purple { background: #F0EBF8; color: #5A3F88; }
+.sec-gray   { background: #f0f0ec; color: #666; }
+.sec-red    { background: #FAE0E0; color: #791F1F; }
+/* Scheduling grid */
+.sched-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.sched-card { background: #f8f8f5; border: 0.5px solid #e4e4e0; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.sched-card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
+.sched-dot { width: 7px; height: 7px; border-radius: 50%; }
+/* Layer stack */
 .layer-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .lc-btn { width: 26px; height: 26px; border-radius: 6px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; font-family: inherit; }
 .lc-btn:disabled { opacity: 0.3; cursor: default; }
 .lc-num { font-size: 14px; font-weight: 700; min-width: 16px; text-align: center; }
-.layer-rows { display: flex; flex-direction: column; gap: 4px; }
-.layer-row-item { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.layer-row-item { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; margin-bottom: 4px; }
 .layer-pos-lbl { font-size: 11px; color: #999; text-align: right; padding-right: 4px; }
-.layer-arrow-row { padding: 1px 0 1px 98px; color: #ccc; font-size: 11px; }
-.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; }
-.check-row input { width: 15px; height: 15px; accent-color: #185FA5; }
-.check-row.disabled { color: #bbb; cursor: not-allowed; }
+/* RC add-new */
+.rc-wrap { position: relative; }
+.rc-add-panel { display: none; background: #fff; border: 0.5px solid #d0d0cc; border-radius: 8px; padding: 8px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.rc-add-panel.open { display: block; }
+.rc-add-row { display: flex; gap: 6px; }
+.rc-add-input { flex: 1; padding: 8px 10px; border: 0.5px solid #d0d0cc; border-radius: 6px; font-size: 13px; font-family: inherit; outline: none; }
+.rc-add-input:focus { border-color: #185FA5; }
+.rc-add-btn { padding: 8px 12px; border-radius: 6px; background: #185FA5; color: #fff; border: none; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; white-space: nowrap; }
+/* Check rows */
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #333; cursor: pointer; padding: 2px 0; }
+.check-row input { width: 16px; height: 16px; accent-color: #185FA5; flex-shrink: 0; }
+/* Approval */
+.approval-confirmed    { background: #D5F0E8; color: #085041; border: 1px solid #1D9E75; }
+.approval-not-approved { background: #FDE6D8; color: #712B13; border: 1px solid #D85A30; }
+.approval-pending      { background: #f0f0ec; color: #888;    border: 1px solid #ccc; }
+.approval-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+.not-approved-row td { background: #FFF5F3 !important; }
+.not-approved-row:hover td { background: #FFE8E3 !important; }
+/* Drawer */
 .drawer-overlay { display: none; position: fixed; inset: 0; z-index: 100; }
 .drawer-overlay.open { display: flex; }
 .drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.3); }
-.drawer { position: absolute; right: 0; top: 0; bottom: 0; width: 440px; max-width: 96vw; background: #fff; border-left: 0.5px solid #e0e0e0; overflow-y: auto; display: flex; flex-direction: column; }
-.drawer-hdr { padding: 16px 20px; border-bottom: 0.5px solid #eee; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: 0; background: #fff; z-index: 1; }
-.drawer-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
-.d-sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #aaa; padding-bottom: 6px; border-bottom: 0.5px solid #eee; margin-top: 4px; }
-.d-field { display: flex; flex-direction: column; gap: 3px; }
+.drawer { position: absolute; right: 0; top: 0; bottom: 0; width: 460px; max-width: 100vw; background: #fff; border-left: 0.5px solid #e0e0e0; overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
+.drawer-hdr { padding: 14px 18px; border-bottom: 0.5px solid #eee; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: sticky; top: 0; background: #fff; z-index: 1; }
+.drawer-body { padding: 18px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.d-sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #aaa; padding-bottom: 5px; border-bottom: 0.5px solid #eee; margin-top: 2px; }
+.d-field { display: flex; flex-direction: column; gap: 2px; }
 .d-lbl { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; }
 .d-val { font-size: 13px; color: #222; line-height: 1.5; white-space: pre-line; }
-.board-list { display: flex; flex-direction: column; gap: 6px; }
+.board-list { display: flex; flex-direction: column; gap: 5px; }
 .board-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 7px 10px; border-radius: 7px; }
 .board-item.active { font-weight: 600; }
 .board-item.inactive { color: #bbb; background: #f8f8f5; }
 .board-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* Inspections */
 .insp-row-g { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: center; background: #f8f8f5; border-radius: 7px; padding: 7px 9px; border: 0.5px solid #eee; margin-bottom: 4px; }
 .add-btn-sm { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #185FA5; background: #E6F1FB; border: none; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-family: inherit; }
 .add-btn-sm:hover { background: #d0e8f8; }
 .add-btn-sm:disabled { opacity: 0.35; cursor: not-allowed; }
-.save-btn-full { width: 100%; padding: 9px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 8px; }
+.save-btn-full { width: 100%; padding: 9px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 6px; }
 .insp-tearoff    { background: #FDE6D8; color: #712B13; }
 .insp-nailing    { background: #E8E6FD; color: #3C3489; }
 .insp-inprogress { background: #FAEEDA; color: #633806; }
 .insp-final      { background: #DCF0CC; color: #27500A; }
+/* Toggle */
 .toggle-wrap { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
 .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
 .tog-slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; cursor: pointer; transition: background 0.2s; }
 .tog-slider:before { content:''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
 .toggle-wrap input:checked ~ .tog-slider { background: #7B5EA7; }
 .toggle-wrap input:checked ~ .tog-slider:before { transform: translateX(16px); }
-.warranty-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #5A3F88; background: #EDE6F7; border: 1px solid #C9B8E8; padding: 3px 10px; border-radius: 10px; margin-top: 6px; }
+.warranty-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #5A3F88; background: #EDE6F7; border: 1px solid #C9B8E8; padding: 3px 10px; border-radius: 10px; margin-top: 5px; }
+/* Steep tag */
+.steep-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #FEF0E0; color: #A04000; border: 1px solid #F0A500; white-space: nowrap; }
+/* Archived badge */
+.archived-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; background: #f0f0ec; color: #888; border: 1px solid #ddd; }
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .form-row, .form-row.cols3, .sched-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+  .drawer { width: 100%; border-left: none; }
+  th:nth-child(n+5) { display: none; }
+  td:nth-child(n+5) { display: none; }
+}
 </style>
 </head>
 <body>
 <div class="app">
 
 <div class="header">
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div style="display:flex;align-items:center;gap:8px;">
     <div class="logo">Roof<span>Board</span></div>
-    <span class="header-tag">Job Database</span>
+    <span style="font-size:11px;font-weight:700;color:#fff;background:#185FA5;padding:3px 9px;border-radius:10px;">Database</span>
   </div>
   <div class="header-right">
     <span class="live-dot"></span>
@@ -149,8 +181,9 @@ textarea.fi { resize: vertical; min-height: 58px; }
       <span id="user-name"></span>
       <span class="role-tag" id="role-tag"></span>
     </div>
-    <button class="btn btn-ghost" id="users-btn" onclick="window.location.href='roofboard_users.html'" style="display:none"><i class="ti ti-users"></i> Users</button>
-    <button class="btn btn-ghost" onclick="logout()"><i class="ti ti-logout"></i> Sign out</button>
+    <button class="btn btn-ghost" id="users-btn" onclick="window.location.href='roofboard_users.html'" style="display:none"><i class="ti ti-users"></i></button>
+    <button class="btn btn-ghost" id="crews-btn" onclick="window.location.href='roofboard_crews.html'" style="display:none"><i class="ti ti-users-group"></i></button>
+    <button class="btn btn-ghost" onclick="logout()"><i class="ti ti-logout"></i></button>
     <button class="btn btn-primary" id="add-job-btn" onclick="openAdd()" style="display:none"><i class="ti ti-plus"></i> Add Job</button>
   </div>
 </div>
@@ -161,35 +194,17 @@ textarea.fi { resize: vertical; min-height: 58px; }
     <input type="text" class="search-input" id="q" placeholder="Search job #, customer, address…" oninput="applyFilter()">
   </div>
   <select class="flt" id="f-status" onchange="applyFilter()">
-    <option value="">All jobs</option>
-    <option value="backlog">Backlog (unscheduled)</option>
-    <option value="scheduled">Scheduled</option>
+    <option value="active">Active Jobs</option>
+    <option value="archived">Archived / Completed</option>
+    <option value="all">All Jobs</option>
   </select>
   <select class="flt" id="f-type" onchange="applyFilter()">
     <option value="">All types</option>
-    <option value="comp">Comp</option>
-    <option value="tile">Tile</option>
-    <option value="metal">Metal</option>
-    <option value="wood">Wood</option>
-    <option value="flat">Flat/TPO</option>
-    <option value="polymer">Polymer</option>
-    <option value="other">Other</option>
-    <option value="gutters_only">Gutters Only</option>
-    <option value="repairs">Repairs</option>
   </select>
-  <select class="flt" id="f-crew" onchange="applyFilter()">
-    <option value="">All crews</option>
-    <option value="__none">Unassigned</option>
-    <option value="gutter">Gutter Crew</option>
-    <option value="removal">Removal Crew</option>
-    <option value="1">Install Crew 1</option>
-    <option value="2">Install Crew 2</option>
-    <option value="3">Install Crew 3</option>
-    <option value="4">Install Crew 4</option>
-    <option value="5">Install Crew 5</option>
-    <option value="6">Install Crew 6</option>
-    <option value="7">Install Crew 7</option>
-    <option value="8">Install Crew 8</option>
+  <select class="flt" id="f-backlog" onchange="applyFilter()">
+    <option value="">All categories</option>
+    <option value="regular">Regular</option>
+    <option value="on_hold">On Hold</option>
   </select>
   <div class="stat-pills" id="stats"></div>
 </div>
@@ -198,14 +213,15 @@ textarea.fi { resize: vertical; min-height: 58px; }
   <table>
     <thead>
       <tr>
-        <th onclick="sortBy('jobNum')">Job # <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('customer')">Customer <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('address')">Address <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('type')">Type <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('crew')">Crew <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('tearoffDate')">Tear-off <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('installDate')">Install <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
-        <th onclick="sortBy('gutterDate')">Gutters <i class="ti ti-arrows-sort" style="font-size:9px;opacity:0.4"></i></th>
+        <th onclick="sortBy('jobNum')">Job # <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th onclick="sortBy('customer')">Customer <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th onclick="sortBy('address')">Address <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th>New Roof</th>
+        <th>RC</th>
+        <th onclick="sortBy('tearoffDate')">Tear-off <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th onclick="sortBy('installDate')">Install <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th onclick="sortBy('gutterDate')">Gutters <i class="ti ti-arrows-sort" style="font-size:8px;opacity:0.4"></i></th>
+        <th>Approval</th>
         <th>Boards</th>
         <th>Flags</th>
         <th></th>
@@ -215,7 +231,7 @@ textarea.fi { resize: vertical; min-height: 58px; }
   </table>
   <div class="no-data" id="nodata" style="display:none;">
     <i class="ti ti-database-off"></i>
-    No jobs yet — click Add Job to get started.
+    No jobs found.
   </div>
 </div>
 <div class="pager" id="pager"></div>
@@ -231,25 +247,27 @@ textarea.fi { resize: vertical; min-height: 58px; }
     <div class="modal-body">
       <input type="hidden" id="eid">
 
-      <div class="sec-div blue"><i class="ti ti-briefcase" style="font-size:11px"></i> Job information</div>
+      <!-- Job Info -->
+      <div class="sec-div sec-blue"><i class="ti ti-briefcase" style="font-size:11px"></i> Job Information</div>
       <div class="form-row">
         <div class="form-group">
           <label class="lbl">Job Number *</label>
-          <input type="text" class="fi" id="f-num" placeholder="#10001">
+          <input type="text" class="fi" id="f-num" placeholder="#10001" inputmode="text">
         </div>
         <div class="form-group">
-          <label class="lbl">Roof Type *</label>
-          <select class="fi" id="f-type-input">
-            <option value="comp">Comp</option>
-            <option value="tile">Tile</option>
-            <option value="metal">Metal</option>
-            <option value="wood">Wood</option>
-            <option value="flat">Flat / TPO</option>
-            <option value="polymer">Polymer</option>
-            <option value="other">Other</option>
-            <option value="gutters_only">Gutters Only</option>
-            <option value="repairs">Repairs</option>
-          </select>
+          <label class="lbl">Roofing Consultant</label>
+          <div class="rc-wrap">
+            <select class="fi" id="f-consultant" onchange="handleRCChange(this.value)">
+              <option value="">— None —</option>
+            </select>
+            <div class="rc-add-panel" id="rc-add-panel">
+              <div class="rc-add-row">
+                <input type="text" class="rc-add-input" id="rc-new-name" placeholder="Full name e.g. Mike Rodriguez" onkeydown="if(event.key==='Enter')addConsultant()">
+                <button class="rc-add-btn" onclick="addConsultant()">Add</button>
+                <button class="rc-add-btn" style="background:#888;" onclick="cancelRC()">✕</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-group full">
@@ -262,22 +280,6 @@ textarea.fi { resize: vertical; min-height: 58px; }
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="lbl">Crew Assignment</label>
-          <select class="fi" id="f-crew-input">
-            <option value="">Unassigned</option>
-            <option value="gutter">Gutter Crew</option>
-            <option value="removal">Removal Crew</option>
-            <option value="1">Install Crew 1</option>
-            <option value="2">Install Crew 2</option>
-            <option value="3">Install Crew 3</option>
-            <option value="4">Install Crew 4</option>
-            <option value="5">Install Crew 5</option>
-            <option value="6">Install Crew 6</option>
-            <option value="7">Install Crew 7</option>
-            <option value="8">Install Crew 8</option>
-          </select>
-        </div>
-        <div class="form-group">
           <label class="lbl">Duration</label>
           <select class="fi" id="f-dur">
             <option value="Half day">Half day</option>
@@ -286,9 +288,83 @@ textarea.fi { resize: vertical; min-height: 58px; }
             <option value="3 days">3 days</option>
           </select>
         </div>
+        <div class="form-group">
+          <label class="lbl">Backlog Category</label>
+          <select class="fi" id="f-backlog-cat">
+            <option value="regular">Regular</option>
+            <option value="on_hold">On Hold</option>
+            <option value="jan">January</option>
+            <option value="feb">February</option>
+            <option value="mar">March</option>
+            <option value="apr">April</option>
+            <option value="may">May</option>
+            <option value="jun">June</option>
+            <option value="jul">July</option>
+            <option value="aug">August</option>
+            <option value="sep">September</option>
+            <option value="oct">October</option>
+            <option value="nov">November</option>
+            <option value="dec">December</option>
+          </select>
+        </div>
       </div>
 
-      <div class="sec-div orange"><i class="ti ti-stack-2" style="font-size:11px"></i> Roof layers (top → bottom)</div>
+      <!-- Roof Details -->
+      <div class="sec-div sec-orange"><i class="ti ti-home" style="font-size:11px"></i> Roof Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">New Roof Material *</label>
+          <div class="rc-wrap">
+            <select class="fi" id="f-new-roof" onchange="handleNewRoofChange(this.value)">
+              <option value="">— Select —</option>
+            </select>
+            <div class="rc-add-panel" id="new-roof-add-panel">
+              <div class="rc-add-row">
+                <input type="text" class="rc-add-input" id="new-roof-name" placeholder="Material name" onkeydown="if(event.key==='Enter')addRoofMaterial()">
+                <button class="rc-add-btn" onclick="addRoofMaterial()">Add</button>
+                <button class="rc-add-btn" style="background:#888;" onclick="cancelNewRoof()">✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Existing Roof Material</label>
+          <select class="fi" id="f-existing-roof">
+            <option value="">— Unknown / N/A —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">New Deck Type</label>
+          <select class="fi" id="f-new-deck">
+            <option value="">— None / No change —</option>
+            <option value="solid_1x">Solid 1x</option>
+            <option value="skip">Skip Sheathing</option>
+            <option value="plywood">Plywood</option>
+            <option value="osb">OSB</option>
+            <option value="tng">T&amp;G</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Existing Deck Type</label>
+          <select class="fi" id="f-existing-deck">
+            <option value="">— Unknown —</option>
+            <option value="solid_1x">Solid 1x</option>
+            <option value="skip">Skip Sheathing</option>
+            <option value="plywood">Plywood</option>
+            <option value="osb">OSB</option>
+            <option value="tng">T&amp;G</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Existing Roof Notes (layers, conditions, etc.)</label>
+        <textarea class="fi" id="f-existing-notes" placeholder="e.g. 2 layers comp over wood shake, damage on north face…"></textarea>
+      </div>
+
+      <!-- Layer Stack -->
+      <div class="sec-div sec-orange"><i class="ti ti-stack-2" style="font-size:11px"></i> New Roof Layers (top → bottom)</div>
       <div class="form-group full">
         <div class="layer-ctrl">
           <span style="font-size:12px;color:#888;">Layers:</span>
@@ -296,10 +372,11 @@ textarea.fi { resize: vertical; min-height: 58px; }
           <span class="lc-num" id="lc-num">1</span>
           <button class="lc-btn" id="lc-plus" onclick="changeFormLayerCount(1)">+</button>
         </div>
-        <div class="layer-rows" id="layer-rows-form"></div>
+        <div id="layer-rows-form"></div>
       </div>
 
-      <div class="sec-div gray"><i class="ti ti-file-text" style="font-size:11px"></i> Materials & notes</div>
+      <!-- Materials & Notes -->
+      <div class="sec-div sec-gray"><i class="ti ti-file-text" style="font-size:11px"></i> Materials &amp; Notes</div>
       <div class="form-group full">
         <label class="lbl">Roofing Materials</label>
         <textarea class="fi" id="f-mat" placeholder="30sq GAF Timberline HDZ, synthetic felt…"></textarea>
@@ -309,10 +386,11 @@ textarea.fi { resize: vertical; min-height: 58px; }
         <textarea class="fi" id="f-notes" placeholder="Gate code: 4821, dog in backyard…"></textarea>
       </div>
 
-      <div class="sec-div green"><i class="ti ti-droplet" style="font-size:11px"></i> Gutter details</div>
+      <!-- Gutter Details -->
+      <div class="sec-div sec-green"><i class="ti ti-droplet" style="font-size:11px"></i> Gutter Details</div>
       <div class="form-row cols3">
         <div class="form-group">
-          <label class="lbl">Gutter Profile</label>
+          <label class="lbl">Profile</label>
           <select class="fi" id="f-gprofile">
             <option value="">None</option>
             <option value="5.5_fascia">5½" Fascia</option>
@@ -323,7 +401,7 @@ textarea.fi { resize: vertical; min-height: 58px; }
           </select>
         </div>
         <div class="form-group">
-          <label class="lbl">Gutter Material</label>
+          <label class="lbl">Material</label>
           <select class="fi" id="f-gmaterial">
             <option value="">N/A</option>
             <option value="aluminum">Aluminum</option>
@@ -332,7 +410,7 @@ textarea.fi { resize: vertical; min-height: 58px; }
           </select>
         </div>
         <div class="form-group">
-          <label class="lbl">Gutter Instruction</label>
+          <label class="lbl">Instruction</label>
           <select class="fi" id="f-ginstr">
             <option value="na">N/A</option>
             <option value="remove">Remove gutters</option>
@@ -342,52 +420,83 @@ textarea.fi { resize: vertical; min-height: 58px; }
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="lbl">Gutter Screen (optional)</label>
+          <label class="lbl">Screen (optional)</label>
           <input type="text" class="fi" id="f-gscreen" placeholder="e.g. LeafGuard Pro…">
         </div>
         <div class="form-group">
-          <label class="lbl">Gutter Materials / Notes</label>
+          <label class="lbl">Gutter Materials</label>
           <input type="text" class="fi" id="f-gmat" placeholder="80ft, 4 downspouts…">
         </div>
       </div>
 
-      <div class="sec-div purple"><i class="ti ti-toggle-right" style="font-size:11px"></i> Flags</div>
+      <!-- Flags -->
+      <div class="sec-div sec-purple"><i class="ti ti-toggle-right" style="font-size:11px"></i> Flags</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <label class="check-row" id="chk-gutters-row"><input type="checkbox" id="f-incgutters"> Includes gutters with reroof (+G)</label>
-        <label class="check-row" id="chk-warranty-row"><input type="checkbox" id="f-warranty"> Extended manufacturer's warranty (★)</label>
-        <label class="check-row" id="chk-rf-row"><input type="checkbox" id="f-rfcomplete"> Reroof complete — gutters ready (✓)</label>
+        <label class="check-row"><input type="checkbox" id="f-steep"> <span>⚠ Steep pitch — 7:12 or greater</span></label>
+        <label class="check-row"><input type="checkbox" id="f-incgutters"> Includes gutters with reroof (+G)</label>
+        <label class="check-row"><input type="checkbox" id="f-warranty"> Extended manufacturer's warranty (★)</label>
+        <label class="check-row"><input type="checkbox" id="f-rfcomplete"> Reroof complete — gutters ready (✓)</label>
       </div>
 
-      <div class="sec-div blue"><i class="ti ti-calendar" style="font-size:11px"></i> Scheduling</div>
-      <div class="sched-box" id="sched-box">
-        <div style="font-size:11px;color:#888;line-height:1.5;" id="sched-hint">Leave dates blank when creating a new job. Fill in later to assign to boards.</div>
-        <div class="sched-row">
-          <div class="sched-item">
-            <div class="sched-board-label"><span class="sched-board-dot" style="background:#D85A30"></span>Removal board</div>
+      <!-- Customer Approval -->
+      <div class="sec-div sec-blue"><i class="ti ti-calendar-check" style="font-size:11px"></i> Customer Approval</div>
+      <div class="form-group full" id="approval-field">
+        <label class="lbl">Start Date Approval</label>
+        <select class="fi" id="f-approval">
+          <option value="pending">? Pending — not yet confirmed</option>
+          <option value="confirmed">✓ Confirmed — customer approved</option>
+          <option value="not_approved">✗ Not Approved — customer said no</option>
+        </select>
+      </div>
+
+      <!-- Scheduling -->
+      <div class="sec-div sec-blue"><i class="ti ti-calendar" style="font-size:11px"></i> Scheduling</div>
+      <div style="font-size:11px;color:#888;line-height:1.5;" id="sched-hint">Leave dates blank when creating a job. A scheduler fills these in later.</div>
+      <div class="sched-grid" id="sched-grid">
+        <!-- Removal -->
+        <div class="sched-card">
+          <div class="sched-card-title"><span class="sched-dot" style="background:#D85A30"></span>Removal Board</div>
+          <div class="form-group">
+            <label class="lbl">Removal Crew</label>
+            <select class="fi" id="f-removal-crew"><option value="">Unassigned</option></select>
+          </div>
+          <div class="form-group">
             <label class="lbl">Tear-off Date</label>
             <input type="date" class="fi" id="f-tearoff">
-            <div style="font-size:10px;color:#aaa;margin-top:3px;">Blank = backlog</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px;">Blank = stays in backlog</div>
           </div>
-          <div class="sched-item">
-            <div class="sched-board-label"><span class="sched-board-dot" style="background:#185FA5"></span>Install board</div>
+        </div>
+        <!-- Install -->
+        <div class="sched-card">
+          <div class="sched-card-title"><span class="sched-dot" style="background:#185FA5"></span>Install Board</div>
+          <div class="form-group">
+            <label class="lbl">Install Crew</label>
+            <select class="fi" id="f-install-crew"><option value="">Unassigned</option></select>
+          </div>
+          <div class="form-group">
             <label class="lbl">Install Date</label>
             <input type="date" class="fi" id="f-install">
           </div>
-          <div class="sched-item">
-            <div class="sched-board-label"><span class="sched-board-dot" style="background:#1D9E75"></span>Gutter board</div>
+        </div>
+        <!-- Gutter -->
+        <div class="sched-card">
+          <div class="sched-card-title"><span class="sched-dot" style="background:#1D9E75"></span>Gutter Board</div>
+          <div class="form-group">
+            <label class="lbl">Gutter Crew</label>
+            <select class="fi" id="f-gutter-crew"><option value="">Unassigned</option></select>
+          </div>
+          <div class="form-group">
             <label class="lbl">Gutter Date</label>
             <input type="date" class="fi" id="f-gutter">
           </div>
         </div>
       </div>
 
-      <div id="f-err" style="color:#D85A30;font-size:12px;font-weight:600;display:none;"></div>
+      <div id="f-err" style="color:#D85A30;font-size:12px;font-weight:600;display:none;padding:6px 0;"></div>
     </div>
     <div class="modal-ftr">
       <button class="btn btn-ghost" onclick="closeModal('job-modal')">Cancel</button>
-      <button class="btn btn-primary" id="save-btn" onclick="saveJob()">
-        <i class="ti ti-device-floppy"></i> Save Job
-      </button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveJob()"><i class="ti ti-device-floppy"></i> Save Job</button>
     </div>
   </div>
 </div>
@@ -401,38 +510,81 @@ textarea.fi { resize: vertical; min-height: 58px; }
         <div style="font-size:16px;font-weight:700;" id="d-name"></div>
         <div style="font-size:13px;font-weight:800;color:#185FA5;margin-top:2px;" id="d-num"></div>
       </div>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">
         <button class="icon-btn" id="d-edit-btn" onclick="editFromDrawer()" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="btn btn-success" id="d-complete-btn" onclick="markComplete()" style="display:none;font-size:11px;padding:5px 10px;"><i class="ti ti-check"></i> Complete</button>
+        <button class="btn btn-warning" id="d-unarchive-btn" onclick="unarchiveJob()" style="display:none;font-size:11px;padding:5px 10px;"><i class="ti ti-archive-off"></i> Restore</button>
+        <button class="icon-btn del" id="d-delete-btn" onclick="deleteFromDrawer()" style="display:none;" title="Delete"><i class="ti ti-trash"></i></button>
         <button class="icon-btn" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
       </div>
     </div>
     <div class="drawer-body">
-      <div id="d-badges" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div id="d-badges" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+
+      <!-- Board presence -->
       <div class="d-sec">Active boards</div>
       <div class="board-list" id="d-boards"></div>
+
+      <!-- Job details -->
       <div class="d-sec">Job details</div>
-      <div class="d-field"><div class="d-lbl"><i class="ti ti-map-pin" style="font-size:10px"></i> Address</div><div class="d-val" id="d-addr"></div></div>
-      <div class="d-field"><div class="d-lbl"><i class="ti ti-clock" style="font-size:10px"></i> Duration</div><div class="d-val" id="d-dur"></div></div>
-      <div class="d-field"><div class="d-lbl"><i class="ti ti-stack-2" style="font-size:10px"></i> Roof layers</div><div class="d-val" id="d-layers"></div></div>
-      <div class="d-field"><div class="d-lbl"><i class="ti ti-package" style="font-size:10px"></i> Materials</div><div class="d-val" id="d-mat"></div></div>
-      <div class="d-field"><div class="d-lbl"><i class="ti ti-notes" style="font-size:10px"></i> Notes</div><div class="d-val" id="d-notes"></div></div>
+      <div class="d-field"><div class="d-lbl">Address</div><div class="d-val" id="d-addr"></div></div>
+      <div class="d-field"><div class="d-lbl">Roofing Consultant</div><div class="d-val" id="d-rc"></div></div>
+      <div class="d-field"><div class="d-lbl">Category</div><div class="d-val" id="d-category"></div></div>
+      <div class="d-field"><div class="d-lbl">Duration</div><div class="d-val" id="d-dur"></div></div>
+
+      <!-- Roof details -->
+      <div class="d-sec">Roof details</div>
+      <div class="d-field"><div class="d-lbl">New roof</div><div class="d-val" id="d-new-roof"></div></div>
+      <div class="d-field"><div class="d-lbl">Existing roof</div><div class="d-val" id="d-existing-roof"></div></div>
+      <div class="d-field"><div class="d-lbl">New deck</div><div class="d-val" id="d-new-deck"></div></div>
+      <div class="d-field"><div class="d-lbl">Existing deck</div><div class="d-val" id="d-existing-deck"></div></div>
+      <div class="d-field" id="d-existing-notes-field" style="display:none;"><div class="d-lbl">Existing roof notes</div><div class="d-val" id="d-existing-notes"></div></div>
+      <div class="d-field"><div class="d-lbl">Roof layers</div><div class="d-val" id="d-layers"></div></div>
+      <div class="d-field"><div class="d-lbl">Materials</div><div class="d-val" id="d-mat"></div></div>
+      <div class="d-field"><div class="d-lbl">Notes</div><div class="d-val" id="d-notes"></div></div>
+
+      <!-- Gutter details -->
       <div class="d-sec">Gutter details</div>
       <div class="d-field"><div class="d-lbl">Profile &amp; material</div><div class="d-val" id="d-gprofile"></div></div>
       <div class="d-field" id="d-gscreen-f" style="display:none;"><div class="d-lbl">Screen</div><div class="d-val" id="d-gscreen"></div></div>
       <div class="d-field"><div class="d-lbl">Instruction</div><div class="d-val" id="d-ginstr"></div></div>
-      <div class="d-sec">Schedule</div>
-      <div class="d-field"><div class="d-val" id="d-dates"></div></div>
-      <!-- Notes edit for sales role -->
-      <div id="sales-notes-edit" style="display:none;">
-        <div class="d-sec">Edit notes</div>
-        <textarea class="fi" id="sales-notes-input" style="min-height:80px;font-size:13px;" placeholder="Add notes…"></textarea>
-        <button class="save-btn-full" onclick="saveSalesNotes()" style="background:#185FA5;color:#fff;margin-top:8px;">
+
+      <!-- Schedule -->
+      <div class="d-sec">Schedule &amp; Crews</div>
+      <div class="d-field"><div class="d-val" id="d-schedule" style="line-height:1.8;"></div></div>
+
+      <!-- Approval -->
+      <div class="d-sec" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Customer Approval</span>
+      </div>
+      <div id="d-approval-display"></div>
+      <select class="fi" id="d-approval-select" style="margin-top:6px;font-size:13px;display:none;" onchange="saveApproval(this.value)">
+        <option value="pending">? Pending</option>
+        <option value="confirmed">✓ Confirmed</option>
+        <option value="not_approved">✗ Not Approved</option>
+      </select>
+
+      <!-- Sales notes edit -->
+      <div id="sales-edit-section" style="display:none;">
+        <div class="d-sec">Edit Notes</div>
+        <textarea class="fi" id="sales-notes-input" style="min-height:80px;font-size:13px;"></textarea>
+        <button class="save-btn-full" onclick="saveSalesNotes()" style="background:#185FA5;color:#fff;">
           <i class="ti ti-device-floppy"></i> Save notes
         </button>
         <div id="sales-notes-saved" style="font-size:12px;color:#1D9E75;font-weight:600;text-align:center;margin-top:6px;display:none;">✓ Saved</div>
       </div>
+
+      <!-- Removal foreman crew assign -->
+      <div id="rf-section" style="display:none;">
+        <div class="d-sec">Assign Removal Crew</div>
+        <select class="fi" id="rf-crew-select" onchange="saveRemovalCrew(this.value)" style="font-size:13px;">
+          <option value="">Unassigned</option>
+        </select>
+        <div id="rf-saved" style="font-size:12px;color:#1D9E75;font-weight:600;margin-top:6px;display:none;">✓ Saved</div>
+      </div>
+
       <!-- Inspections -->
-      <div class="d-sec" id="insp-sec-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="d-sec" id="insp-sec-hdr" style="display:flex;align-items:center;justify-content:space-between;">
         <span><i class="ti ti-clipboard-check" style="color:#F5A623;margin-right:4px"></i>Inspections</span>
         <button class="add-btn-sm" id="add-insp-btn" onclick="addInsp()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
       </div>
@@ -442,6 +594,7 @@ textarea.fi { resize: vertical; min-height: 58px; }
         <i class="ti ti-device-floppy"></i> Save inspections
       </button>
       <div id="insp-saved" style="font-size:12px;color:#1D9E75;font-weight:600;text-align:center;margin-top:6px;display:none;">✓ Saved</div>
+
       <!-- Warranty -->
       <div id="warranty-sec" style="display:none;">
         <div class="d-sec" style="display:flex;align-items:center;justify-content:space-between;">
@@ -460,173 +613,176 @@ textarea.fi { resize: vertical; min-height: 58px; }
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────
-const API = 'https://lgrroofboard-api-production.up.railway.app';
-
 // ── Auth ──────────────────────────────────────────────────────
 function getToken(){ return localStorage.getItem('rb_token'); }
 function getRole() { return localStorage.getItem('rb_role'); }
 function getName() { return localStorage.getItem('rb_name'); }
 
-// Role permission helpers
-const role = getRole();
-const canAdd    = ['admin','scheduler','office_staff'].includes(role);
-const canEdit   = ['admin','scheduler','office_staff'].includes(role);
-const canDates  = ['admin','scheduler'].includes(role);
-const canDelete = role === 'admin';
-const canUsers  = role === 'admin';
-const salesOnly = role === 'sales';
+const userRole = getRole();
+const canAdd     = ['admin','scheduler','office_staff'].includes(userRole);
+const canEdit    = ['admin','scheduler','office_staff'].includes(userRole);
+const canDates   = ['admin','scheduler'].includes(userRole);
+const canCrews   = ['admin','scheduler','office_staff'].includes(userRole);
+const canDelete  = userRole === 'admin';
+const canUsers   = userRole === 'admin';
+const canManageCrews = ['admin','scheduler'].includes(userRole);
+const canComplete= ['admin','scheduler','office_staff'].includes(userRole);
+const canArchive = ['admin','scheduler'].includes(userRole);
+const isSales    = userRole === 'sales';
+const isRFore    = userRole === 'removal_foreman';
+const isSupplier = userRole === 'supplier';
 
-async function authFetch(method, path, body){
+async function authFetch(method,path,body){
   const opts={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}};
   if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(API+path,opts);
-  if(r.status===401){ logout(); throw new Error('Unauth'); }
+  const r=await fetch(RB_API+path,opts);
+  if(r.status===401){logout();throw new Error('Unauth');}
   return r;
 }
 
-function logout(){
-  try { fetch(API+'/api/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}}); } catch(e){}
-  localStorage.removeItem('rb_token');
-  localStorage.removeItem('rb_role');
-  localStorage.removeItem('rb_name');
-  localStorage.removeItem('rb_expires');
-  window.location.href='roofboard_login.html';
-}
-
-// ── Constants ─────────────────────────────────────────────────
-const JOB_TYPES = {
-  comp:{label:'Comp',bg:'#DEEDFB',text:'#0C447C',border:'#185FA5'},
-  tile:{label:'Tile',bg:'#E8E6FD',text:'#3C3489',border:'#534AB7'},
-  metal:{label:'Metal',bg:'#E8E7E1',text:'#444441',border:'#888780'},
-  wood:{label:'Wood',bg:'#F8E9C8',text:'#633806',border:'#BA7517'},
-  flat:{label:'Flat/TPO',bg:'#FAE0E0',text:'#791F1F',border:'#E24B4A'},
-  polymer:{label:'Polymer',bg:'#DCF0CC',text:'#27500A',border:'#639922'},
-  other:{label:'Other',bg:'#F8E2ED',text:'#72243E',border:'#993556'},
-  gutters_only:{label:'Gutters Only',bg:'#C8EEE0',text:'#085041',border:'#1D9E75'},
-  repairs:{label:'Repairs',bg:'#FDE6D8',text:'#712B13',border:'#D85A30'},
-};
-const REROOF = ['comp','tile','metal','wood','flat','polymer','other'];
-const LAYER_MATS = [
-  {v:'comp',l:'Comp'},{v:'tile',l:'Tile'},{v:'metal',l:'Metal'},
-  {v:'wood',l:'Wood'},{v:'flat',l:'Flat/TPO'},{v:'polymer',l:'Polymer'},{v:'other',l:'Other'}
-];
-const GUTTER_PROFILES = {
-  '5.5_fascia':{label:'5½" Fascia',short:'5½F'},
-  '5.5_curved_fascia':{label:'5½" Curved Fascia',short:'5½CF'},
-  '5_ogee':{label:'5" Ogee',short:'5OG'},
-  '6_ogee':{label:'6" Ogee',short:'6OG'},
-  '7.5_fascia':{label:'7½" Fascia',short:'7½F'},
-};
-const GUTTER_MATERIALS = {
-  aluminum:{label:'Aluminum',short:'AL'},
-  steel:{label:'Steel',short:'STL'},
-  bonderized:{label:'Bonderized',short:'BND'},
-};
-const INSP_TYPES = [
-  {v:'tearoff',l:'Tear-off'},{v:'nailing',l:'Nailing'},
-  {v:'inprogress',l:'In-progress'},{v:'final',l:'Final'},
-];
-const CREW_BG=['#DEEDFB','#C8EEE0','#F8E9C8','#F8E2ED','#FAE0E0','#E8E6FD','#D5F0E8','#DCF0CC'];
-const CREW_TX=['#0C447C','#085041','#633806','#72243E','#791F1F','#3C3489','#0F6E56','#27500A'];
-const PG=25;
-
 // ── State ─────────────────────────────────────────────────────
 let jobs=[],filtered=[],pg=1,sf='jobNum',sd=1,did=null,drawerInsps=[];
-let formLayers=['comp'];
+let formLayers=[''];
+let consultants=[], roofMaterials=[], installCrews=[], gutterCrews=[], removalCrews=[];
 
-// ── Load & poll ───────────────────────────────────────────────
+// ── Load reference data ───────────────────────────────────────
+async function loadRefData(){
+  try {
+    [consultants,roofMaterials,installCrews,gutterCrews,removalCrews] = await Promise.all([
+      fetch(RB_API+'/api/consultants').then(r=>r.json()),
+      fetch(RB_API+'/api/roof-materials').then(r=>r.json()),
+      fetch(RB_API+'/api/crews?type=install').then(r=>r.json()),
+      fetch(RB_API+'/api/crews?type=gutter').then(r=>r.json()),
+      fetch(RB_API+'/api/crews?type=removal').then(r=>r.json()),
+    ]);
+    populateTypeFilter();
+    populateBacklogFilter();
+  } catch(e){ console.error('Failed to load ref data',e); }
+}
+
+function populateTypeFilter(){
+  const sel=document.getElementById('f-type');
+  sel.innerHTML='<option value="">All types</option>';
+  roofMaterials.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m.id; o.textContent=m.name; sel.appendChild(o);
+  });
+}
+function populateBacklogFilter(){
+  // Already has regular and on_hold — add months
+  const sel=document.getElementById('f-backlog');
+  BACKLOG_CATEGORIES.filter(c=>!['regular','on_hold'].includes(c.value)&&c.value).forEach(c=>{
+    const o=document.createElement('option'); o.value=c.value; o.textContent=c.value.charAt(0).toUpperCase()+c.value.slice(1); sel.appendChild(o);
+  });
+}
+
+// ── Load jobs ─────────────────────────────────────────────────
 async function loadJobs(){
   try {
-    const r=await fetch(API+'/api/jobs');
+    const status=document.getElementById('f-status').value;
+    let url='/api/jobs';
+    if(status==='archived') url+='?archived=1';
+    else if(status==='all') url+='?archived=all'; // server handles
+    const r=await fetch(RB_API+url);
     jobs=await r.json();
     applyFilter();
   } catch(e){ console.error('Load failed',e); }
 }
-setInterval(loadJobs,30000);
+setInterval(()=>{ loadJobs(); },30000);
 
-// ── Board routing ─────────────────────────────────────────────
-function onInstallBoard(j){ return !!(j.installDate&&j.crew&&!['gutter','removal',''].includes(j.crew)); }
-function onGutterBoard(j) { return !!j.gutterDate; }
-function isBacklog(j)     { return !j.tearoffDate; }
-
-// ── Helpers ───────────────────────────────────────────────────
-function fmtD(d){ if(!d)return'—'; const dt=new Date(d+'T00:00:00'); return isNaN(dt)?d:dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
-function typeBadge(t){ const d=JOB_TYPES[t]; return d?`<span class="badge" style="background:${d.bg};color:${d.text}">${d.label}</span>`:t; }
-function crewLabel(c){
-  if(!c) return '<span class="badge" style="background:#f0f0ec;color:#aaa">Unassigned</span>';
-  if(c==='gutter') return '<span class="badge" style="background:#C8EEE0;color:#085041">Gutter Crew</span>';
-  if(c==='removal') return '<span class="badge" style="background:#FDE6D8;color:#712B13">Removal Crew</span>';
-  const n=parseInt(c)-1;
-  if(n>=0&&n<8) return `<span class="badge" style="background:${CREW_BG[n]};color:${CREW_TX[n]}">Crew ${c}</span>`;
-  return `<span class="badge">${c}</span>`;
+// ── Material helpers ──────────────────────────────────────────
+function getMat(id){ return roofMaterials.find(m=>m.id===id)||null; }
+function matBadge(id){
+  const m=getMat(id);
+  if(!m) return '<span style="color:#ccc;font-size:11px">—</span>';
+  return `<span class="badge" style="background:${m.colorBg};color:${m.colorText};border:1px solid ${m.colorBorder}">${m.name}</span>`;
 }
+function matStyle(id){
+  const m=getMat(id);
+  if(!m) return {bg:'#f0f0ec',text:'#888',border:'#ccc'};
+  return {bg:m.colorBg,text:m.colorText,border:m.colorBorder};
+}
+function rcName(id){ if(!id)return'—'; const c=consultants.find(x=>x.id===id); return c?c.name:'—'; }
+function rcInitials(id){ if(!id)return''; const c=consultants.find(x=>x.id===id); return c?c.initials:''; }
+function crewName(id,list){ if(!id)return'Unassigned'; const c=list.find(x=>x.id===id); return c?c.name:'—'; }
 function layerSummary(stack){
   if(!stack||!stack.length) return '—';
-  if(stack.length===1){ const m=LAYER_MATS.find(x=>x.v===stack[0]); return m?m.l:'1 layer'; }
-  return stack.map((v,i)=>{ const m=LAYER_MATS.find(x=>x.v===v); const pos=i===0?'Top':i===stack.length-1?'Bottom':`Layer ${i+1}`; return `${pos}: ${m?m.l:v}`; }).join('\n');
+  return stack.map((id,i)=>{
+    const m=getMat(id)||roofMaterials.find(x=>x.id===id);
+    const pos=i===0?'Top':i===stack.length-1?'Bottom':`Layer ${i+1}`;
+    return `${pos}: ${m?m.name:id}`;
+  }).join('\n');
 }
 
-// ── Filter / sort ─────────────────────────────────────────────
+// ── Filter/sort/render ────────────────────────────────────────
 function applyFilter(){
   const q=(document.getElementById('q').value||'').toLowerCase();
-  const fst=document.getElementById('f-status').value;
-  const ftp=document.getElementById('f-type').value;
-  const fcr=document.getElementById('f-crew').value;
+  const ft=document.getElementById('f-type').value;
+  const fb=document.getElementById('f-backlog').value;
   filtered=jobs.filter(j=>{
     if(q&&!`${j.jobNum} ${j.customer} ${j.address}`.toLowerCase().includes(q))return false;
-    if(fst==='backlog'&&!isBacklog(j))return false;
-    if(fst==='scheduled'&&isBacklog(j))return false;
-    if(ftp&&j.type!==ftp)return false;
-    if(fcr==='__none'&&j.crew)return false;
-    if(fcr&&fcr!=='__none'&&j.crew!==fcr)return false;
+    if(ft&&j.newRoofMaterialId!==ft)return false;
+    if(fb&&j.backlogCategory!==fb)return false;
     return true;
   });
-  filtered.sort((a,b)=>{ let av=a[sf]||'',bv=b[sf]||''; if(typeof av==='string')av=av.toLowerCase(); if(typeof bv==='string')bv=bv.toLowerCase(); return av<bv?-sd:av>bv?sd:0; });
+  filtered.sort((a,b)=>{
+    let av=a[sf]||'',bv=b[sf]||'';
+    if(typeof av==='string')av=av.toLowerCase();
+    if(typeof bv==='string')bv=bv.toLowerCase();
+    return av<bv?-sd:av>bv?sd:0;
+  });
   pg=1; renderTable();
 }
 function sortBy(f){ sf===f?sd*=-1:(sf=f,sd=1); applyFilter(); }
 function goPage(p){ pg=p; renderTable(); }
 
 function renderTable(){
-  const s=(pg-1)*PG, page=filtered.slice(s,s+PG);
+  const PG=25, s=(pg-1)*PG, page=filtered.slice(s,s+PG);
   document.getElementById('nodata').style.display=page.length?'none':'block';
+  const appr=rbApprovalInfo;
   document.getElementById('tbody').innerHTML=page.map(j=>{
-    const layers=j.layerStack||[];
-    const backlog=isBacklog(j);
+    const notApproved=j.startDateApproval==='not_approved';
+    const ms=matStyle(j.newRoofMaterialId);
+    const onInstall=!!(j.installDate&&j.installCrewId);
+    const onGutter=!!j.gutterDate;
+    const onRemoval=!!j.tearoffDate;
     const boards=`<div class="board-dots">
-      <div class="board-dot ${backlog?'bd-off':'bd-removal'}" title="${backlog?'Removal: backlog':'Removal: scheduled'}"></div>
-      <div class="board-dot ${onInstallBoard(j)?'bd-install':'bd-off'}" title="Install board"></div>
-      <div class="board-dot ${onGutterBoard(j)?'bd-gutters':'bd-off'}" title="Gutter board"></div>
+      <div class="board-dot" style="background:${onRemoval?'#D85A30':'#e0e0e0'}" title="Removal"></div>
+      <div class="board-dot" style="background:${onInstall?'#185FA5':'#e0e0e0'}" title="Install"></div>
+      <div class="board-dot" style="background:${onGutter?'#1D9E75':'#e0e0e0'}" title="Gutters"></div>
     </div>`;
     const flags=`
+      ${j.steepPitch?'<span class="steep-tag">⚠ STEEP</span> ':''}
       ${j.includesGutters?'<span style="font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;background:#D5F0E8;color:#0F6E56">+G</span> ':''}
-      ${layers.length>1?`<span style="font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;background:#F8E9C8;color:#633806">${layers.length}L</span> `:''}
-      ${j.warranty?'<span style="font-size:10px;font-weight:900;color:#7B5EA7">★</span>':''}`;
-    const editBtn=canEdit?`<div class="icon-btn" onclick="openEdit('${j.id}')" title="Edit"><i class="ti ti-edit"></i></div>`:'';
-    const delBtn=canDelete?`<div class="icon-btn del" onclick="delJob('${j.id}')" title="Delete"><i class="ti ti-trash"></i></div>`:'';
-    return `<tr onclick="openDrawer('${j.id}')">
+      ${(j.layerStack&&j.layerStack.length>1)?`<span style="font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;background:#F8E9C8;color:#633806">${j.layerStack.length}L</span> `:''}
+      ${j.warranty?'<span style="font-size:10px;font-weight:900;color:#7B5EA7">★</span>':''}
+      ${j.archived?'<span class="archived-badge" style="font-size:9px;padding:1px 6px;">✓ Done</span>':''}`;
+    const a=appr(j.startDateApproval);
+    const editBtn=canEdit&&!j.archived?`<div class="icon-btn" onclick="openEdit('${j.id}')" title="Edit"><i class="ti ti-edit"></i></div>`:'';
+    const delBtn=canDelete?`<div class="icon-btn del" onclick="event.stopPropagation();delJob('${j.id}')" title="Delete"><i class="ti ti-trash"></i></div>`:'';
+    return `<tr class="${notApproved?'not-approved-row':''}${j.archived?' archived-row':''}" onclick="openDrawer('${j.id}')">
       <td><span class="job-num">${j.jobNum||'—'}</span></td>
       <td><span class="cust-name">${j.customer||'—'}</span></td>
       <td><span class="addr-cell" title="${j.address||''}">${j.address||'—'}</span></td>
-      <td>${typeBadge(j.type)}</td>
-      <td>${crewLabel(j.crew)}</td>
-      <td>${fmtD(j.tearoffDate)}</td>
-      <td>${fmtD(j.installDate)}</td>
-      <td>${fmtD(j.gutterDate)}</td>
+      <td>${matBadge(j.newRoofMaterialId)}</td>
+      <td>${rcInitials(j.consultantId)?`<span style="font-size:10px;font-weight:800;background:#EAF2FB;color:#185FA5;padding:2px 6px;border-radius:5px;">${rcInitials(j.consultantId)}</span>`:'—'}</td>
+      <td>${rbFmtD(j.tearoffDate)}</td>
+      <td>${rbFmtD(j.installDate)}</td>
+      <td>${rbFmtD(j.gutterDate)}</td>
+      <td><span class="approval-pill ${a.cls}">${a.label}</span></td>
       <td>${boards}</td>
       <td>${flags}</td>
       <td onclick="event.stopPropagation()"><div class="actions">${editBtn}${delBtn}</div></td>
     </tr>`;
   }).join('');
 
-  const bl=filtered.filter(isBacklog).length, sc=filtered.length-bl;
+  const total=filtered.length, pages=Math.ceil(total/25);
+  const bl=filtered.filter(j=>!j.archived).length;
   document.getElementById('stats').innerHTML=`
-    <span class="stat-pill" style="background:#f0f0ec;color:#555">${filtered.length} jobs</span>
-    ${bl?`<span class="stat-pill" style="background:#FDE6D8;color:#712B13">${bl} backlog</span>`:''}
-    ${sc?`<span class="stat-pill" style="background:#D5F0E8;color:#085041">${sc} scheduled</span>`:''}`;
+    <span class="stat-pill" style="background:#f0f0ec;color:#555">${total} jobs</span>
+    ${filtered.filter(j=>j.steepPitch).length?`<span class="stat-pill" style="background:#FEF0E0;color:#A04000">⚠ ${filtered.filter(j=>j.steepPitch).length} steep</span>`:''}
+    ${filtered.filter(j=>j.archived).length?`<span class="stat-pill" style="background:#f0f0ec;color:#888">${filtered.filter(j=>j.archived).length} archived</span>`:''}`;
 
-  const total=filtered.length,pages=Math.ceil(total/PG);
   if(pages<=1){ document.getElementById('pager').innerHTML=`<span>${total} job${total!==1?'s':''}</span><span></span>`; }
   else {
     let btns='';
@@ -634,9 +790,57 @@ function renderTable(){
       if(p===1||p===pages||Math.abs(p-pg)<=1) btns+=`<div class="page-btn${p===pg?' active':''}" onclick="goPage(${p})">${p}</div>`;
       else if(Math.abs(p-pg)===2) btns+=`<div style="padding:0 4px;line-height:28px">…</div>`;
     }
-    const a=(pg-1)*PG+1,b=Math.min(pg*PG,total);
-    document.getElementById('pager').innerHTML=`<span>Showing ${a}–${b} of ${total}</span><div class="page-btns">${btns}</div>`;
+    const a=(pg-1)*25+1,b=Math.min(pg*25,total);
+    document.getElementById('pager').innerHTML=`<span>${a}–${b} of ${total}</span><div class="page-btns">${btns}</div>`;
   }
+}
+
+// ── Consultant dropdown ───────────────────────────────────────
+function populateConsultantDropdown(selId, selectedId){
+  const sel=document.getElementById(selId); if(!sel)return;
+  sel.innerHTML='<option value="">— None —</option>';
+  consultants.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===selectedId) o.selected=true; sel.appendChild(o); });
+  const addOpt=document.createElement('option'); addOpt.value='__add__'; addOpt.textContent='＋ Add new Roofing Consultant…'; sel.appendChild(addOpt);
+}
+function handleRCChange(val){ if(val==='__add__'){ document.getElementById('rc-add-panel').classList.add('open'); document.getElementById('rc-new-name').focus(); document.getElementById('f-consultant').value=''; } else { document.getElementById('rc-add-panel').classList.remove('open'); } }
+function cancelRC(){ document.getElementById('rc-add-panel').classList.remove('open'); document.getElementById('rc-new-name').value=''; }
+async function addConsultant(){
+  const name=document.getElementById('rc-new-name').value.trim(); if(!name)return;
+  try {
+    const r=await authFetch('POST','/api/consultants',{name}); const data=await r.json();
+    if(!r.ok){alert(data.error||'Failed');return;}
+    consultants.push(data); consultants.sort((a,b)=>a.name.localeCompare(b.name));
+    populateConsultantDropdown('f-consultant',data.id); document.getElementById('f-consultant').value=data.id; cancelRC();
+  } catch(e){alert('Failed: '+e.message);}
+}
+
+// ── Roof material dropdown ────────────────────────────────────
+function populateRoofDropdown(selId, selectedId, includeAddNew=false){
+  const sel=document.getElementById(selId); if(!sel)return;
+  const placeholder=selId==='f-new-roof'?'— Select —':'— Unknown / N/A —';
+  sel.innerHTML=`<option value="">${placeholder}</option>`;
+  roofMaterials.forEach(m=>{ const o=document.createElement('option'); o.value=m.id; o.textContent=m.name; if(m.id===selectedId) o.selected=true; sel.appendChild(o); });
+  if(includeAddNew){ const a=document.createElement('option'); a.value='__add__'; a.textContent='＋ Add new material…'; sel.appendChild(a); }
+}
+function handleNewRoofChange(val){ if(val==='__add__'){ document.getElementById('new-roof-add-panel').classList.add('open'); document.getElementById('new-roof-name').focus(); document.getElementById('f-new-roof').value=''; } else { document.getElementById('new-roof-add-panel').classList.remove('open'); } }
+function cancelNewRoof(){ document.getElementById('new-roof-add-panel').classList.remove('open'); document.getElementById('new-roof-name').value=''; }
+async function addRoofMaterial(){
+  const name=document.getElementById('new-roof-name').value.trim(); if(!name)return;
+  try {
+    const r=await authFetch('POST','/api/roof-materials',{name}); const data=await r.json();
+    if(!r.ok){alert(data.error||'Failed');return;}
+    roofMaterials.push(data);
+    populateRoofDropdown('f-new-roof',data.id,true); document.getElementById('f-new-roof').value=data.id;
+    populateRoofDropdown('f-existing-roof',null,false);
+    populateTypeFilter(); cancelNewRoof();
+  } catch(e){alert('Failed: '+e.message);}
+}
+
+// ── Crew dropdowns ────────────────────────────────────────────
+function populateCrewDropdown(selId, crews, selectedId){
+  const sel=document.getElementById(selId); if(!sel)return;
+  sel.innerHTML='<option value="">Unassigned</option>';
+  crews.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===selectedId) o.selected=true; sel.appendChild(o); });
 }
 
 // ── Layer stack form ──────────────────────────────────────────
@@ -645,92 +849,106 @@ function renderFormLayers(){
   document.getElementById('lc-num').textContent=count;
   document.getElementById('lc-minus').disabled=count<=1;
   document.getElementById('lc-plus').disabled=count>=4;
-  document.getElementById('layer-rows-form').innerHTML=formLayers.map((mat,i)=>{
+  const container=document.getElementById('layer-rows-form');
+  container.innerHTML=formLayers.map((matId,i)=>{
     const isTop=i===0,isBot=i===count-1;
     const pos=count===1?'Only layer':isTop?'Top layer':isBot?'Bottom layer':`Layer ${i+1}`;
-    const arrow=i>0?`<div class="layer-arrow-row"><i class="ti ti-arrow-down"></i></div>`:'';
-    const opts=LAYER_MATS.map(m=>`<option value="${m.v}"${m.v===mat?' selected':''}>${m.l}</option>`).join('');
+    const arrow=i>0?`<div style="padding:2px 0 2px 94px;color:#ccc;font-size:11px;"><i class="ti ti-arrow-down"></i></div>`:'';
+    const opts=roofMaterials.map(m=>`<option value="${m.id}"${m.id===matId?' selected':''}>${m.name}</option>`).join('');
     return `${arrow}<div class="layer-row-item">
       <div class="layer-pos-lbl">${pos}</div>
-      <select class="fi" style="font-size:12px;padding:6px 8px;" onchange="formLayers[${i}]=this.value">${opts}</select>
+      <select class="fi" style="font-size:13px;padding:8px;" onchange="formLayers[${i}]=this.value">
+        <option value="">— Select —</option>${opts}
+      </select>
     </div>`;
   }).join('');
 }
 function changeFormLayerCount(dir){
-  if(dir===1&&formLayers.length<4) formLayers.push('comp');
+  if(dir===1&&formLayers.length<4) formLayers.push('');
   else if(dir===-1&&formLayers.length>1) formLayers.pop();
   renderFormLayers();
 }
 
-// ── Lock form fields by role ──────────────────────────────────
-function applyFormPermissions(isEdit){
-  // Office staff cannot edit scheduling dates
-  const datesLocked = isEdit && !canDates;
-  ['f-tearoff','f-install','f-gutter'].forEach(id=>{
-    document.getElementById(id).disabled=datesLocked;
-  });
-  // Show locked notice in sched box if dates locked
-  const hint=document.getElementById('sched-hint');
-  if(datesLocked){
-    hint.innerHTML='<i class="ti ti-lock" style="font-size:12px;color:#aaa"></i> Scheduling dates can only be edited by Admin or Scheduler roles.';
-    hint.style.color='#aaa';
-  } else {
-    hint.textContent='Leave dates blank when creating a new job. Fill in later to assign to boards.';
-    hint.style.color='#888';
-  }
-}
-
-// ── Add / Edit ────────────────────────────────────────────────
+// ── Add / Edit form ───────────────────────────────────────────
 function clearForm(){
   document.getElementById('eid').value='';
-  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-type-input').value='comp';
-  document.getElementById('f-crew-input').value='';
+  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat','f-existing-notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('f-dur').value='1 day';
+  document.getElementById('f-backlog-cat').value='regular';
   document.getElementById('f-gprofile').value='';
   document.getElementById('f-gmaterial').value='';
   document.getElementById('f-ginstr').value='na';
   document.getElementById('f-tearoff').value='';
   document.getElementById('f-install').value='';
   document.getElementById('f-gutter').value='';
+  document.getElementById('f-new-deck').value='';
+  document.getElementById('f-existing-deck').value='';
+  document.getElementById('f-steep').checked=false;
   document.getElementById('f-incgutters').checked=false;
   document.getElementById('f-warranty').checked=false;
   document.getElementById('f-rfcomplete').checked=false;
+  document.getElementById('f-approval').value='pending';
   document.getElementById('f-err').style.display='none';
-  formLayers=['comp'];
+  populateConsultantDropdown('f-consultant',null);
+  populateRoofDropdown('f-new-roof',null,true);
+  populateRoofDropdown('f-existing-roof',null,false);
+  populateCrewDropdown('f-removal-crew',removalCrews,null);
+  populateCrewDropdown('f-install-crew',installCrews,null);
+  populateCrewDropdown('f-gutter-crew',gutterCrews,null);
+  formLayers=[''];
   renderFormLayers();
 }
+
+function applyFormPermissions(isEdit){
+  const datesLocked=isEdit&&!canDates;
+  const crewsLocked=isEdit&&!canCrews;
+  ['f-tearoff','f-install','f-gutter'].forEach(id=>{ document.getElementById(id).disabled=datesLocked; });
+  ['f-removal-crew','f-install-crew','f-gutter-crew'].forEach(id=>{ document.getElementById(id).disabled=crewsLocked; });
+  const hint=document.getElementById('sched-hint');
+  if(datesLocked) hint.innerHTML='<i class="ti ti-lock" style="font-size:11px;color:#aaa"></i> Scheduling dates require Admin or Scheduler role.';
+  else hint.textContent='Leave dates blank when creating a job. Fill in later to assign to boards.';
+}
+
 function openAdd(){
   document.getElementById('modal-title').textContent='Add Job';
-  clearForm();
-  applyFormPermissions(false);
+  clearForm(); applyFormPermissions(false);
   document.getElementById('job-modal').classList.add('open');
 }
 function openEdit(id){
-  const j=jobs.find(x=>x.id===id); if(!j) return;
+  const j=jobs.find(x=>x.id===id); if(!j)return;
   document.getElementById('modal-title').textContent='Edit Job';
   document.getElementById('eid').value=id;
   document.getElementById('f-num').value=j.jobNum||'';
   document.getElementById('f-cust').value=j.customer||'';
   document.getElementById('f-addr').value=j.address||'';
-  document.getElementById('f-type-input').value=j.type||'comp';
-  document.getElementById('f-crew-input').value=j.crew||'';
   document.getElementById('f-dur').value=j.duration||'1 day';
+  document.getElementById('f-backlog-cat').value=j.backlogCategory||'regular';
+  document.getElementById('f-mat').value=j.materials||'';
+  document.getElementById('f-notes').value=j.notes||'';
   document.getElementById('f-gprofile').value=j.gutterProfile||'';
   document.getElementById('f-gmaterial').value=j.gutterMaterial||'';
   document.getElementById('f-ginstr').value=j.gutterInstruction||'na';
   document.getElementById('f-gscreen').value=j.gutterScreen||'';
   document.getElementById('f-gmat').value=j.gutterMaterials||'';
-  document.getElementById('f-mat').value=j.materials||'';
-  document.getElementById('f-notes').value=j.notes||'';
   document.getElementById('f-tearoff').value=j.tearoffDate||'';
   document.getElementById('f-install').value=j.installDate||'';
   document.getElementById('f-gutter').value=j.gutterDate||'';
+  document.getElementById('f-new-deck').value=j.newDeckType||'';
+  document.getElementById('f-existing-deck').value=j.existingDeckType||'';
+  document.getElementById('f-existing-notes').value=j.existingRoofNotes||'';
+  document.getElementById('f-steep').checked=!!j.steepPitch;
   document.getElementById('f-incgutters').checked=!!j.includesGutters;
   document.getElementById('f-warranty').checked=!!j.warranty;
   document.getElementById('f-rfcomplete').checked=!!j.reroofComplete;
+  document.getElementById('f-approval').value=j.startDateApproval||'pending';
   document.getElementById('f-err').style.display='none';
-  formLayers=j.layerStack&&j.layerStack.length?[...j.layerStack]:[j.type||'comp'];
+  populateConsultantDropdown('f-consultant',j.consultantId);
+  populateRoofDropdown('f-new-roof',j.newRoofMaterialId,true);
+  populateRoofDropdown('f-existing-roof',j.existingRoofMaterialId,false);
+  populateCrewDropdown('f-removal-crew',removalCrews,j.removalCrewId);
+  populateCrewDropdown('f-install-crew',installCrews,j.installCrewId);
+  populateCrewDropdown('f-gutter-crew',gutterCrews,j.gutterCrewId);
+  formLayers=j.layerStack&&j.layerStack.length?[...j.layerStack]:[''];
   renderFormLayers();
   applyFormPermissions(true);
   document.getElementById('job-modal').classList.add('open');
@@ -740,16 +958,22 @@ function editFromDrawer(){ closeDrawer(); if(did) openEdit(did); }
 async function saveJob(){
   const num=document.getElementById('f-num').value.trim();
   const cust=document.getElementById('f-cust').value.trim();
-  if(!num||!cust){ showFormErr('Job number and customer name are required.'); return; }
+  if(!num||!cust){showFormErr('Job number and customer name are required.');return;}
   const btn=document.getElementById('save-btn');
   btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Saving…';
   const eid=document.getElementById('eid').value;
   const data={
     jobNum:num,customer:cust,
     address:document.getElementById('f-addr').value.trim(),
-    type:document.getElementById('f-type-input').value,
-    crew:document.getElementById('f-crew-input').value||null,
+    consultantId:document.getElementById('f-consultant').value||null,
     duration:document.getElementById('f-dur').value,
+    backlogCategory:document.getElementById('f-backlog-cat').value,
+    newRoofMaterialId:document.getElementById('f-new-roof').value||null,
+    existingRoofMaterialId:document.getElementById('f-existing-roof').value||null,
+    newDeckType:document.getElementById('f-new-deck').value,
+    existingDeckType:document.getElementById('f-existing-deck').value,
+    existingRoofNotes:document.getElementById('f-existing-notes').value.trim(),
+    steepPitch:document.getElementById('f-steep').checked,
     gutterProfile:document.getElementById('f-gprofile').value||null,
     gutterMaterial:document.getElementById('f-gmaterial').value||null,
     gutterInstruction:document.getElementById('f-ginstr').value,
@@ -760,129 +984,213 @@ async function saveJob(){
     includesGutters:document.getElementById('f-incgutters').checked,
     warranty:document.getElementById('f-warranty').checked,
     reroofComplete:document.getElementById('f-rfcomplete').checked,
-    layerStack:formLayers,
+    startDateApproval:document.getElementById('f-approval').value,
+    layerStack:formLayers.filter(Boolean),
   };
-  // Only include dates if role allows editing them
   if(canDates){
     data.tearoffDate=document.getElementById('f-tearoff').value||null;
     data.installDate=document.getElementById('f-install').value||null;
     data.gutterDate=document.getElementById('f-gutter').value||null;
   }
+  if(canCrews){
+    data.removalCrewId=document.getElementById('f-removal-crew').value||null;
+    data.installCrewId=document.getElementById('f-install-crew').value||null;
+    data.gutterCrewId=document.getElementById('f-gutter-crew').value||null;
+  }
   try {
     const r=eid?await authFetch('PATCH',`/api/jobs/${eid}`,data):await authFetch('POST','/api/jobs',data);
     const d=await r.json();
-    if(!r.ok){ showFormErr(d.error||'Save failed'); btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Save Job'; return; }
+    if(!r.ok){showFormErr(d.error||'Save failed');btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Save Job';return;}
     closeModal('job-modal'); await loadJobs();
-  } catch(e){ if(e.message!=='Unauth'){ showFormErr('Save failed: '+e.message); } }
+  } catch(e){ if(e.message!=='Unauth'){showFormErr('Save failed: '+e.message);} }
   btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Save Job';
 }
 function showFormErr(msg){ const e=document.getElementById('f-err');e.textContent=msg;e.style.display='block'; }
 
 async function delJob(id){
-  if(!confirm('Delete this job? This cannot be undone.'))return;
-  try { await authFetch('DELETE',`/api/jobs/${id}`); await loadJobs(); }
+  if(!confirm('Permanently delete this job? This cannot be undone.'))return;
+  try { await authFetch('DELETE',`/api/jobs/${id}`); await loadJobs(); if(did===id)closeDrawer(); }
   catch(e){ if(e.message!=='Unauth') alert('Delete failed: '+e.message); }
-}
-
-// ── Sales notes edit ──────────────────────────────────────────
-async function saveSalesNotes(){
-  if(!did) return;
-  const notes=document.getElementById('sales-notes-input').value;
-  try {
-    const r=await authFetch('PATCH',`/api/jobs/${did}`,{notes});
-    if(!r.ok){ const d=await r.json(); alert(d.error||'Save failed'); return; }
-    const j=jobs.find(x=>x.id===did); if(j) j.notes=notes;
-    document.getElementById('d-notes').textContent=notes||'—';
-    const c=document.getElementById('sales-notes-saved');c.style.display='block';
-    setTimeout(()=>c.style.display='none',2500);
-    await loadJobs();
-  } catch(e){ if(e.message!=='Unauth') alert('Save failed'); }
 }
 
 // ── Detail Drawer ─────────────────────────────────────────────
 async function openDrawer(id){
-  const j=jobs.find(x=>x.id===id); if(!j) return;
+  const j=jobs.find(x=>x.id===id); if(!j)return;
   did=id;
-  const t=JOB_TYPES[j.type]||JOB_TYPES.other;
+  const ms=matStyle(j.newRoofMaterialId);
+  const nm=getMat(j.newRoofMaterialId);
+  const em=getMat(j.existingRoofMaterialId);
+
   document.getElementById('d-name').textContent=j.customer||'—';
   document.getElementById('d-num').textContent='Job '+(j.jobNum||'');
 
-  let bgs=`<span class="badge" style="background:${t.bg};color:${t.text}">${t.label}</span>`;
+  // Badges
+  let bgs='';
+  if(nm) bgs+=`<span class="badge" style="background:${ms.bg};color:${ms.text};border:1px solid ${ms.border}">${nm.name}</span>`;
+  if(j.steepPitch) bgs+=` <span class="steep-tag">⚠ STEEP</span>`;
+  if(j.archived) bgs+=` <span class="archived-badge">✓ Completed</span>`;
   if(j.includesGutters) bgs+=` <span class="badge" style="background:#D5F0E8;color:#0F6E56">+G</span>`;
-  if(j.reroofComplete)  bgs+=` <span class="badge" style="background:#D5F0E8;color:#0F6E56">✓ Reroof done</span>`;
-  if(j.crew) bgs+=` ${crewLabel(j.crew)}`;
   document.getElementById('d-badges').innerHTML=bgs;
 
-  const backlog=isBacklog(j);
+  // Board presence
+  const onRemoval=!!j.tearoffDate, onInstall=!!(j.installDate&&j.installCrewId), onGutter=!!j.gutterDate;
   document.getElementById('d-boards').innerHTML=`
-    <div class="board-item ${!backlog?'active':'inactive'}" style="${!backlog?'background:#FEF0E6;color:#894020':''}">
-      <span class="board-item-dot" style="background:${!backlog?'#D85A30':'#ddd'}"></span>
-      Removal — ${backlog?'<strong>Backlog</strong>':'Scheduled · '+fmtD(j.tearoffDate)}
+    <div class="board-item ${onRemoval?'active':'inactive'}" style="${onRemoval?'background:#FEF0E6;color:#894020':''}">
+      <span class="board-item-dot" style="background:${onRemoval?'#D85A30':'#ddd'}"></span>
+      Removal — ${onRemoval?crewName(j.removalCrewId,removalCrews)+' · '+rbFmtD(j.tearoffDate):'Backlog'}
     </div>
-    <div class="board-item ${onInstallBoard(j)?'active':'inactive'}" style="${onInstallBoard(j)?'background:#EAF2FB;color:#0C447C':''}">
-      <span class="board-item-dot" style="background:${onInstallBoard(j)?'#185FA5':'#ddd'}"></span>
-      Install — ${onInstallBoard(j)?fmtD(j.installDate):'Not scheduled'}
+    <div class="board-item ${onInstall?'active':'inactive'}" style="${onInstall?'background:#EAF2FB;color:#0C447C':''}">
+      <span class="board-item-dot" style="background:${onInstall?'#185FA5':'#ddd'}"></span>
+      Install — ${onInstall?crewName(j.installCrewId,installCrews)+' · '+rbFmtD(j.installDate):'Not scheduled'}
     </div>
-    <div class="board-item ${onGutterBoard(j)?'active':'inactive'}" style="${onGutterBoard(j)?'background:#EAF7F2;color:#085041':''}">
-      <span class="board-item-dot" style="background:${onGutterBoard(j)?'#1D9E75':'#ddd'}"></span>
-      Gutters — ${onGutterBoard(j)?fmtD(j.gutterDate):'Not scheduled'}
+    <div class="board-item ${onGutter?'active':'inactive'}" style="${onGutter?'background:#EAF7F2;color:#085041':''}">
+      <span class="board-item-dot" style="background:${onGutter?'#1D9E75':'#ddd'}"></span>
+      Gutters — ${onGutter?crewName(j.gutterCrewId,gutterCrews)+' · '+rbFmtD(j.gutterDate):'Not scheduled'}
     </div>`;
 
   document.getElementById('d-addr').textContent=j.address||'—';
+  document.getElementById('d-rc').textContent=rcName(j.consultantId);
+  document.getElementById('d-category').textContent=rbCategoryLabel(j.backlogCategory);
   document.getElementById('d-dur').textContent=j.duration||'—';
+  document.getElementById('d-new-roof').textContent=nm?nm.name:'—';
+  document.getElementById('d-existing-roof').textContent=em?em.name:'—';
+  document.getElementById('d-new-deck').textContent=rbDeckLabel(j.newDeckType)||'—';
+  document.getElementById('d-existing-deck').textContent=rbDeckLabel(j.existingDeckType)||'—';
+  const enf=document.getElementById('d-existing-notes-field');
+  if(j.existingRoofNotes){enf.style.display='flex';document.getElementById('d-existing-notes').textContent=j.existingRoofNotes;}
+  else enf.style.display='none';
   document.getElementById('d-layers').textContent=layerSummary(j.layerStack);
   document.getElementById('d-mat').textContent=j.materials||'—';
   document.getElementById('d-notes').textContent=j.notes||'—';
-
-  const gp=GUTTER_PROFILES[j.gutterProfile], gm=GUTTER_MATERIALS[j.gutterMaterial];
+  const gp=GUTTER_PROFILES[j.gutterProfile], gm=GUTTER_MATERIALS_MAP[j.gutterMaterial];
   document.getElementById('d-gprofile').textContent=[gp?gp.label:'',gm?gm.label:''].filter(Boolean).join(' · ')||'—';
   const gsf=document.getElementById('d-gscreen-f');
   if(j.gutterScreen){gsf.style.display='flex';document.getElementById('d-gscreen').textContent=j.gutterScreen;}
   else gsf.style.display='none';
   const gi={na:'N/A',remove:'Remove gutters',keep:'Keep gutters'};
   document.getElementById('d-ginstr').textContent=gi[j.gutterInstruction]||'N/A';
-  document.getElementById('d-dates').textContent=`Tear-off: ${fmtD(j.tearoffDate)}\nInstall:  ${fmtD(j.installDate)}\nGutters:  ${fmtD(j.gutterDate)}`;
+  document.getElementById('d-schedule').innerHTML=`
+    Removal: ${crewName(j.removalCrewId,removalCrews)} &nbsp;·&nbsp; ${rbFmtD(j.tearoffDate)}<br>
+    Install: ${crewName(j.installCrewId,installCrews)} &nbsp;·&nbsp; ${rbFmtD(j.installDate)}<br>
+    Gutters: ${crewName(j.gutterCrewId,gutterCrews)} &nbsp;·&nbsp; ${rbFmtD(j.gutterDate)}`;
 
-  // Sales role: show notes editor, hide other edit controls
-  const salesEdit=document.getElementById('sales-notes-edit');
+  // Approval
+  const appr=rbApprovalInfo(j.startDateApproval);
+  document.getElementById('d-approval-display').innerHTML=`<span class="approval-pill ${appr.cls}" style="font-size:12px;padding:4px 12px;">${appr.label}</span>`;
+  const apprSel=document.getElementById('d-approval-select');
+  const canApproval=['admin','scheduler','office_staff','sales'].includes(userRole);
+  apprSel.style.display=(canApproval&&!j.archived)?'block':'none';
+  apprSel.value=j.startDateApproval||'pending';
+
+  // Role-specific sections
+  const salesEdit=document.getElementById('sales-edit-section');
+  const rfSec=document.getElementById('rf-section');
+  const inspHdr=document.getElementById('insp-sec-hdr');
   const editBtn=document.getElementById('d-edit-btn');
-  const inspSec=document.getElementById('insp-sec-header');
-  const inspList=document.getElementById('insp-list');
-  const noInsp=document.getElementById('no-insp');
+  const completeBtn=document.getElementById('d-complete-btn');
+  const unarchiveBtn=document.getElementById('d-unarchive-btn');
+  const deleteBtn=document.getElementById('d-delete-btn');
 
-  if(salesOnly){
+  salesEdit.style.display='none'; rfSec.style.display='none';
+  editBtn.style.display='none'; completeBtn.style.display='none';
+  unarchiveBtn.style.display='none'; deleteBtn.style.display='none';
+  inspHdr.style.display='none';
+
+  if(isSales){
     salesEdit.style.display='block';
     document.getElementById('sales-notes-input').value=j.notes||'';
     document.getElementById('sales-notes-saved').style.display='none';
-    editBtn.style.display='none';
-    inspSec.style.display='none'; inspList.style.display='none'; noInsp.style.display='none';
-  } else {
-    salesEdit.style.display='none';
-    editBtn.style.display=canEdit?'flex':'none';
-    inspSec.style.display='flex'; inspList.style.display='block'; noInsp.style.display='block';
+  } else if(isRFore){
+    rfSec.style.display='block';
+    populateCrewDropdown('rf-crew-select',removalCrews,j.removalCrewId);
+    document.getElementById('rf-saved').style.display='none';
+  } else if(!isSupplier){
+    if(canEdit&&!j.archived) editBtn.style.display='flex';
+    if(canComplete&&!j.archived) completeBtn.style.display='inline-flex';
+    if(canArchive&&j.archived) unarchiveBtn.style.display='inline-flex';
+    if(canDelete) deleteBtn.style.display='flex';
+    inspHdr.style.display='flex';
     try { drawerInsps=await authFetch('GET',`/api/jobs/${id}/inspections`).then(r=>r.json()); }
     catch { drawerInsps=[]; }
     renderInsps();
   }
 
-  // Warranty (only for reroof types, not sales)
+  // Warranty
   const ws=document.getElementById('warranty-sec');
-  ws.style.display=(REROOF.includes(j.type)&&!salesOnly)?'block':'none';
-  if(REROOF.includes(j.type)&&!salesOnly){
+  const isReroof=nm&&!['Gutters Only','Repairs'].includes(nm.name);
+  ws.style.display=(isReroof&&!isSales&&!isRFore&&!isSupplier)?'block':'none';
+  if(isReroof&&!isSales&&!isRFore&&!isSupplier){
     document.getElementById('warranty-chk').checked=!!j.warranty;
     document.getElementById('warranty-badge').style.display=j.warranty?'inline-flex':'none';
   }
+
   document.getElementById('drawer').classList.add('open');
 }
-function closeDrawer(){document.getElementById('drawer').classList.remove('open');did=null;}
+function closeDrawer(){ document.getElementById('drawer').classList.remove('open'); did=null; }
 
+async function markComplete(){
+  if(!did)return;
+  if(!confirm('Mark this job as complete? It will be archived and removed from all boards.'))return;
+  try { await authFetch('POST',`/api/jobs/${did}/complete`); closeDrawer(); await loadJobs(); }
+  catch(e){ if(e.message!=='Unauth') alert('Failed: '+e.message); }
+}
+async function unarchiveJob(){
+  if(!did)return;
+  try { await authFetch('POST',`/api/jobs/${did}/unarchive`); closeDrawer(); await loadJobs(); }
+  catch(e){ if(e.message!=='Unauth') alert('Failed: '+e.message); }
+}
+async function deleteFromDrawer(){
+  if(!did)return; await delJob(did);
+}
+
+// ── Sales notes ───────────────────────────────────────────────
+async function saveSalesNotes(){
+  if(!did)return;
+  const notes=document.getElementById('sales-notes-input').value;
+  try {
+    const r=await authFetch('PATCH',`/api/jobs/${did}`,{notes});
+    if(!r.ok){const d=await r.json();alert(d.error||'Failed');return;}
+    const j=jobs.find(x=>x.id===did); if(j) j.notes=notes;
+    document.getElementById('d-notes').textContent=notes||'—';
+    const c=document.getElementById('sales-notes-saved');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+    await loadJobs();
+  } catch(e){if(e.message!=='Unauth') alert('Failed');}
+}
+
+// ── Removal Foreman crew assign ───────────────────────────────
+async function saveRemovalCrew(value){
+  if(!did)return;
+  try {
+    const r=await authFetch('PATCH',`/api/jobs/${did}`,{removalCrewId:value||null});
+    if(!r.ok){const d=await r.json();alert(d.error||'Failed');return;}
+    const j=jobs.find(x=>x.id===did); if(j) j.removalCrewId=value||null;
+    const c=document.getElementById('rf-saved');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+    await loadJobs();
+  } catch(e){if(e.message!=='Unauth') alert('Failed');}
+}
+
+// ── Approval ──────────────────────────────────────────────────
+async function saveApproval(value){
+  if(!did)return;
+  try {
+    await authFetch('PATCH',`/api/jobs/${did}`,{startDateApproval:value});
+    const j=jobs.find(x=>x.id===did); if(j) j.startDateApproval=value;
+    const appr=rbApprovalInfo(value);
+    document.getElementById('d-approval-display').innerHTML=`<span class="approval-pill ${appr.cls}" style="font-size:12px;padding:4px 12px;">${appr.label}</span>`;
+    await loadJobs();
+  } catch(e){if(e.message!=='Unauth') alert('Failed');}
+}
+
+// ── Warranty ──────────────────────────────────────────────────
 async function toggleWarranty(v){
-  if(!did) return;
+  if(!did)return;
   try {
     await authFetch('PATCH',`/api/jobs/${did}`,{warranty:v});
     document.getElementById('warranty-badge').style.display=v?'inline-flex':'none';
     await loadJobs();
-  } catch(e){ if(e.message!=='Unauth') alert('Update failed'); }
+  } catch(e){if(e.message!=='Unauth') alert('Failed');}
 }
 
 // ── Inspections ───────────────────────────────────────────────
@@ -896,10 +1204,10 @@ function renderInsps(){
   else {
     noM.style.display='none';saveB.style.display='block';
     list.innerHTML=drawerInsps.map((insp,i)=>{
-      const opts=INSP_TYPES.map(t=>`<option value="${t.v}"${t.v===insp.type?' selected':''}>${t.l}</option>`).join('');
+      const opts=INSP_TYPES.map(t=>`<option value="${t.value}"${t.value===insp.type?' selected':''}>${t.label}</option>`).join('');
       return `<div class="insp-row-g">
-        <select style="padding:5px 7px;font-size:12px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;background:#fff;" onchange="drawerInsps[${i}].type=this.value">${opts}</select>
-        <input type="date" style="padding:5px 7px;font-size:12px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;" value="${insp.date||''}" onchange="drawerInsps[${i}].date=this.value">
+        <select style="padding:7px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;background:#fff;" onchange="drawerInsps[${i}].type=this.value">${opts}</select>
+        <input type="date" style="padding:7px;font-size:13px;border:0.5px solid #d0d0cc;border-radius:6px;font-family:inherit;" value="${insp.date||''}" onchange="drawerInsps[${i}].date=this.value">
         <div class="icon-btn del" onclick="delInsp(${i})"><i class="ti ti-trash" style="font-size:12px"></i></div>
       </div>`;
     }).join('');
@@ -909,40 +1217,44 @@ function renderInsps(){
 function addInsp(){if(!did||drawerInsps.length>=4)return;drawerInsps.push({type:'tearoff',date:''});renderInsps();}
 function delInsp(i){drawerInsps.splice(i,1);renderInsps();}
 async function saveInsps(){
-  if(!did) return;
+  if(!did)return;
   try {
     await authFetch('PUT',`/api/jobs/${did}/inspections`,drawerInsps);
     const c=document.getElementById('insp-saved');c.style.display='block';
     setTimeout(()=>c.style.display='none',2500);
     await loadJobs();
-  } catch(e){ if(e.message!=='Unauth') alert('Save failed'); }
+  } catch(e){if(e.message!=='Unauth') alert('Failed');}
 }
 
 // ── Modal helpers ─────────────────────────────────────────────
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function maybeClose(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function maybeClose(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();closeModal('job-modal');} });
 
-// ── Init — apply role-based UI ────────────────────────────────
-function initUI(){
-  const roleLabelMap={admin:'Admin',scheduler:'Scheduler',office_staff:'Office Staff',sales:'Sales'};
-  const roleClassMap={admin:'role-admin',scheduler:'role-scheduler',office_staff:'role-office_staff',sales:'role-sales'};
-  document.getElementById('user-name').textContent=getName()||'';
-  const rt=document.getElementById('role-tag');
-  rt.textContent=roleLabelMap[role]||role;
-  rt.className='role-tag '+(roleClassMap[role]||'');
-  if(canAdd) document.getElementById('add-job-btn').style.display='inline-flex';
-  if(canUsers) document.getElementById('users-btn').style.display='inline-flex';
+// ── Logout ────────────────────────────────────────────────────
+function logout(){
+  try{fetch(RB_API+'/api/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});}catch(e){}
+  ['rb_token','rb_role','rb_name','rb_expires'].forEach(k=>localStorage.removeItem(k));
+  window.location.href='roofboard_login.html';
 }
 
-// ── Auth check ────────────────────────────────────────────────
-const token=getToken(), expires=localStorage.getItem('rb_expires');
-if(!token||!expires||new Date(expires)<=new Date()){
-  window.location.href='roofboard_login.html';
-} else {
-  initUI();
-  loadJobs();
+// ── Init ──────────────────────────────────────────────────────
+function initUI(){
+  const rc=ROLE_COLORS[userRole]||{bg:'#f0f0ec',text:'#888'};
+  document.getElementById('user-name').textContent=getName()||'';
+  const rt=document.getElementById('role-tag');
+  rt.textContent=ROLE_LABELS[userRole]||userRole;
+  rt.style.cssText=`background:${rc.bg};color:${rc.text};`;
+  if(canAdd)  document.getElementById('add-job-btn').style.display='inline-flex';
+  if(canUsers) document.getElementById('users-btn').style.display='inline-flex';
+  if(canManageCrews) document.getElementById('crews-btn').style.display='inline-flex';
+  // Status filter default
+  if(isSupplier||isSales||isRFore) document.getElementById('f-status').value='active';
 }
+
+const token=getToken(), expires=localStorage.getItem('rb_expires');
+if(!token||!expires||new Date(expires)<=new Date()) window.location.href='roofboard_login.html';
+else { initUI(); loadRefData().then(()=>loadJobs()); }
 </script>
 </body>
 </html>
