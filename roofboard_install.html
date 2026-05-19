@@ -17,8 +17,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius: 8px; font-size: 12px; font-family: inherit; background: #f8f8f5; color: #111; outline: none; cursor: pointer; }
 .crew-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-.crew-btn { padding: 5px 13px; border-radius: 18px; border: 0.5px solid #ccc; background: #f0f0ec; font-size: 12px; color: #555; cursor: pointer; font-family: inherit; }
-.crew-btn.active { color: #fff; border-color: transparent; font-weight: 600; }
+.crew-btn { padding: 5px 13px; border-radius: 18px; border: 0.5px solid #ccc; background: #f0f0ec; font-size: 12px; color: #555; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.crew-btn.active { color: #fff; border-color: transparent; font-weight: 600; background: #185FA5; }
+.crew-btn.all-btn.active { background: #444; }
 .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .month-nav { display: flex; align-items: center; gap: 8px; }
 .nav-btn { width: 28px; height: 28px; border-radius: 7px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; font-size: 15px; }
@@ -49,13 +50,14 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .tag-steep        { background: #FEF0E0; color: #A04000; border: 1px solid #F0A500; }
 .tag-existing     { background: rgba(0,0,0,0.08); color: inherit; }
 .tag-deck         { background: rgba(0,0,0,0.06); color: inherit; font-style: italic; }
+.tag-crew         { background: #E8E6FD; color: #3C3489; }
+.tag-multicrew    { background: #E8E6FD; color: #3C3489; font-weight: 900; }
 .more-pill { font-size: 10px; color: #aaa; padding: 1px 4px; }
 .legend { margin-top: 12px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
 .legend-group-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
 .legend-items { display: flex; gap: 8px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
 .legend-swatch { width: 22px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-/* Modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
 .modal-overlay.open { display: flex; }
 .modal { background: #fff; border-radius: 12px; padding: 18px 20px; width: 460px; max-width: 98vw; margin: auto; }
@@ -78,25 +80,14 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .insp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .insp-title { font-size: 11px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
 .insp-title i { color: #F5A623; }
-.add-insp-btn { font-size: 11px; font-weight: 600; color: #185FA5; background: #E6F1FB; border: none; border-radius: 7px; padding: 4px 10px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 3px; }
-.add-insp-btn:disabled { opacity: 0.4; cursor: default; }
-.insp-rows { display: flex; flex-direction: column; gap: 5px; }
-.insp-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 5px; align-items: center; background: #f8f8f5; border-radius: 7px; padding: 7px 9px; }
+.no-insp-msg { font-size: 12px; color: #bbb; font-style: italic; }
 .insp-tearoff    { background: #FDE6D8; color: #712B13; }
 .insp-nailing    { background: #E8E6FD; color: #3C3489; }
 .insp-inprogress { background: #FAEEDA; color: #633806; }
 .insp-final      { background: #DCF0CC; color: #27500A; }
-.no-insp-msg { font-size: 12px; color: #bbb; font-style: italic; }
 .warranty-section { margin-top: 12px; padding-top: 12px; border-top: 1.5px solid #f0f0ec; }
-.warranty-row { display: flex; align-items: center; justify-content: space-between; }
 .warranty-title { font-size: 11px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
 .warranty-title i { color: #7B5EA7; }
-.warranty-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
-.warranty-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-.warranty-slider { position: absolute; inset: 0; background: #ddd; border-radius: 22px; cursor: pointer; transition: background 0.2s; }
-.warranty-slider:before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 2px rgba(0,0,0,0.2); }
-.warranty-toggle input:checked + .warranty-slider { background: #7B5EA7; }
-.warranty-toggle input:checked + .warranty-slider:before { transform: translateX(18px); }
 .warranty-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #5A3F88; background: #EDE6F7; border: 1px solid #C9B8E8; padding: 3px 9px; border-radius: 9px; margin-top: 5px; }
 </style>
 </head>
@@ -105,9 +96,7 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 <div class="header">
   <div class="logo">Roof<span>Board</span> <span style="font-size:12px;font-weight:700;color:#fff;background:#185FA5;padding:2px 8px;border-radius:8px;margin-left:4px;">Install</span></div>
   <div class="controls">
-    <select class="rc-filter" id="rc-filter" onchange="renderCalendar()">
-      <option value="">All Consultants</option>
-    </select>
+    <select class="rc-filter" id="rc-filter" onchange="renderCalendar()"><option value="">All Consultants</option></select>
     <span class="live-dot"></span>
   </div>
 </div>
@@ -125,8 +114,7 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 
 <div class="dow-row">
   <div class="dow-cell">Sun</div><div class="dow-cell">Mon</div><div class="dow-cell">Tue</div>
-  <div class="dow-cell">Wed</div><div class="dow-cell">Thu</div><div class="dow-cell">Fri</div>
-  <div class="dow-cell">Sat</div>
+  <div class="dow-cell">Wed</div><div class="dow-cell">Thu</div><div class="dow-cell">Fri</div><div class="dow-cell">Sat</div>
 </div>
 <div class="cal-grid" id="cal-grid"></div>
 <div class="legend" id="legend"></div>
@@ -141,13 +129,13 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-badges" id="m-badges"></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar-check" style="font-size:12px"></i> Customer Approval</div><div class="modal-value" id="m-approval"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-user" style="font-size:12px"></i> Roofing Consultant</div><div class="modal-value" id="m-rc"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-users-group" style="font-size:12px"></i> Install Crews</div><div class="modal-value" id="m-crews"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-map-pin" style="font-size:12px"></i> Address</div><div class="modal-value" id="m-addr"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar" style="font-size:12px"></i> Install Date</div><div class="modal-value" id="m-date"></div></div>
-    <div class="modal-field"><div class="modal-label"><i class="ti ti-clock" style="font-size:12px"></i> Duration</div><div class="modal-value" id="m-dur"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home" style="font-size:12px"></i> New Roof</div><div class="modal-value" id="m-new-roof"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home-off" style="font-size:12px"></i> Existing Roof</div><div class="modal-value" id="m-existing-roof"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-layers" style="font-size:12px"></i> Deck (Existing → New)</div><div class="modal-value" id="m-deck"></div></div>
-    <div class="modal-field" id="m-existing-notes-f" style="display:none;"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Existing Roof Notes</div><div class="modal-value" id="m-existing-notes"></div></div>
+    <div class="modal-field" id="m-existing-notes-f" style="display:none;"><div class="modal-label">Existing Roof Notes</div><div class="modal-value" id="m-existing-notes"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-package" style="font-size:12px"></i> Materials</div><div class="modal-value" id="m-mat"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Notes</div><div class="modal-value" id="m-notes"></div></div>
     <div class="gutter-section" id="m-gutter-section" style="display:none">
@@ -155,30 +143,25 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
       <div class="modal-field" style="margin-bottom:0"><div class="modal-label">Gutter materials</div><div class="modal-value" id="m-gutter-mat"></div></div>
     </div>
     <div class="insp-section">
-      <div class="insp-header">
-        <div class="insp-title"><i class="ti ti-clipboard-check"></i> Inspections</div>
-      </div>
+      <div class="insp-header"><div class="insp-title"><i class="ti ti-clipboard-check"></i> Inspections</div></div>
       <div id="insp-display"></div>
       <div class="no-insp-msg" id="no-insp-msg" style="display:none">No inspections scheduled.</div>
     </div>
-    <div class="warranty-section" id="m-warranty-section">
-      <div class="warranty-row">
-        <div><div class="warranty-title"><i class="ti ti-rosette"></i> Extended Warranty</div><div style="font-size:11px;color:#888;margin-top:2px;" id="m-warranty-desc"></div></div>
-        <label class="warranty-toggle"><input type="checkbox" id="m-warranty-toggle" onchange="toggleWarranty(this.checked)"><span class="warranty-slider"></span></label>
-      </div>
-      <div class="warranty-badge" id="m-warranty-badge" style="display:none"><i class="ti ti-circle-check" style="font-size:11px"></i> Extended warranty included</div>
+    <div class="warranty-section" id="m-warranty-section" style="display:none;">
+      <div class="warranty-title"><i class="ti ti-rosette"></i> Extended Warranty</div>
+      <div id="m-warranty-desc" style="font-size:11px;color:#888;margin-top:2px;"></div>
+      <div class="warranty-badge" id="m-warranty-badge" style="display:none;margin-top:6px;"><i class="ti ti-circle-check" style="font-size:11px"></i> Extended warranty included</div>
     </div>
   </div>
 </div>
 
 <script>
-const TODAY = new Date();
+const TODAY=new Date();
 let viewYear=TODAY.getFullYear(), viewMonth=TODAY.getMonth();
-let activeCrew=null, activeJobId=null;
+let activeCrew='all';
 let allJobs=[], consultants=[], roofMaterials=[], installCrews=[], modalInsps=[];
 
 async function apiFetch(path){ const r=await fetch(RB_API+path); if(!r.ok)throw new Error('API '+r.status); return r.json(); }
-async function apiPost(method,path,body){ const r=await fetch(RB_API+path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok)throw new Error('API '+r.status); return r.json(); }
 
 async function loadAll(){
   try {
@@ -187,12 +170,9 @@ async function loadAll(){
       apiFetch('/api/roof-materials'),
       apiFetch('/api/crews?type=install'),
     ]);
-    // Populate RC filter
     const sel=document.getElementById('rc-filter');
     sel.innerHTML='<option value="">All Consultants</option>';
     consultants.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
-    // Set first crew
-    if(installCrews.length&&!activeCrew) activeCrew=installCrews[0].id;
     renderCrewTabs();
     await loadJobs();
   } catch(e){ console.error(e); }
@@ -210,32 +190,46 @@ setInterval(loadJobs,30000);
 function getMat(id){ return roofMaterials.find(m=>m.id===id)||null; }
 function rcInitials(id){ if(!id)return''; const c=consultants.find(x=>x.id===id); return c?c.initials:''; }
 function rcName(id){ if(!id)return'—'; const c=consultants.find(x=>x.id===id); return c?c.name:'—'; }
-function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function crewNames(ids){ if(!ids||!ids.length)return'Unassigned'; return ids.map(id=>{ const c=installCrews.find(x=>x.id===id); return c?c.name:id; }).join(', '); }
+function sameDay(a,b){ return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
 
 function renderCrewTabs(){
-  document.getElementById('crew-tabs').innerHTML=installCrews.map(c=>
-    `<button class="crew-btn${c.id===activeCrew?' active':''}" style="${c.id===activeCrew?`background:#185FA5;color:#fff;border-color:#185FA5`:''}" onclick="selectCrew('${c.id}')">${c.name}</button>`
-  ).join('');
+  const tabs=document.getElementById('crew-tabs');
+  const allActive=activeCrew==='all';
+  let html=`<button class="crew-btn all-btn${allActive?' active':''}" style="${allActive?'background:#444;color:#fff;border-color:#444':''}" onclick="selectCrew('all')">All Crews</button>`;
+  html+=installCrews.map(c=>{
+    const isActive=activeCrew===c.id;
+    return `<button class="crew-btn${isActive?' active':''}" style="${isActive?'background:#185FA5;color:#fff;border-color:#185FA5':''}" onclick="selectCrew('${c.id}')">${c.name}</button>`;
+  }).join('');
+  tabs.innerHTML=html;
+}
+
+function getFilteredJobs(){
+  const rcFilter=document.getElementById('rc-filter').value;
+  let jobs=allJobs;
+  if(activeCrew!=='all') jobs=jobs.filter(j=>j.installCrewIds&&j.installCrewIds.includes(activeCrew));
+  if(rcFilter) jobs=jobs.filter(j=>j.consultantId===rcFilter);
+  return jobs;
 }
 
 function renderCalendar(){
-  const rcFilter=document.getElementById('rc-filter').value;
-  let crewJobs=allJobs.filter(j=>j.installCrewId===activeCrew);
-  if(rcFilter) crewJobs=crewJobs.filter(j=>j.consultantId===rcFilter);
-
+  const jobs=getFilteredJobs();
   const firstDay=new Date(viewYear,viewMonth,1), lastDay=new Date(viewYear,viewMonth+1,0);
   document.getElementById('month-title').textContent=firstDay.toLocaleDateString('en-US',{month:'long',year:'numeric'});
-  document.getElementById('job-count').textContent=crewJobs.filter(j=>j.date.getFullYear()===viewYear&&j.date.getMonth()===viewMonth).length+' jobs';
+  document.getElementById('job-count').textContent=jobs.filter(j=>j.date.getFullYear()===viewYear&&j.date.getMonth()===viewMonth).length+' jobs';
 
   const startDow=firstDay.getDay(), cells=[];
   for(let i=0;i<startDow;i++) cells.push({date:new Date(viewYear,viewMonth,i-startDow+1),other:true});
   for(let d=1;d<=lastDay.getDate();d++) cells.push({date:new Date(viewYear,viewMonth,d),other:false});
   while(cells.length%7!==0) cells.push({date:new Date(viewYear,viewMonth+1,cells.length-lastDay.getDate()-startDow+1),other:true});
 
+  // Deduplicate jobs on All Crews tab (same job can appear once)
   const MAX=3;
   document.getElementById('cal-grid').innerHTML=cells.map(cell=>{
     const isToday=sameDay(cell.date,TODAY), isWeekend=cell.date.getDay()===0||cell.date.getDay()===6;
-    const dayJobs=crewJobs.filter(j=>sameDay(j.date,cell.date));
+    let dayJobs=jobs.filter(j=>sameDay(j.date,cell.date));
+    // Deduplicate on All tab
+    if(activeCrew==='all'){ const seen=new Set(); dayJobs=dayJobs.filter(j=>{ if(seen.has(j.id))return false; seen.add(j.id); return true; }); }
     const shown=dayJobs.slice(0,MAX), extra=dayJobs.length-MAX;
     const pills=shown.map(j=>{
       const nm=getMat(j.newRoofMaterialId), em=getMat(j.existingRoofMaterialId);
@@ -243,19 +237,20 @@ function renderCalendar(){
       const appr=rbApprovalInfo(j.startDateApproval);
       const notApproved=j.startDateApproval==='not_approved';
       const rc=rcInitials(j.consultantId);
-      const inspDot=j._hasInsps?`<span style="width:5px;height:5px;border-radius:50%;background:#F5A623;display:inline-block;margin-left:2px;vertical-align:middle;flex-shrink:0"></span>`:'';
-      const warDot=j.warranty?`<span style="font-size:8px;font-weight:900;color:#7B5EA7;margin-left:2px;flex-shrink:0">★</span>`:'';
+      const isMultiCrew=j.installCrewIds&&j.installCrewIds.length>1;
       return `<div class="job-pill${notApproved?' not-approved':''}" style="background:${bg};color:${text};border-left-color:${border}" onclick="openJob('${j.id}')">
         <div class="pill-r1">
           <span class="pill-num">${j.jobNum}</span>
-          <span class="pill-name">${j.customer}${j.includesGutters?'&nbsp;<span style="font-size:8px;font-weight:800;opacity:0.6">+G</span>':''}${inspDot}${warDot}</span>
+          <span class="pill-name">${j.customer}${j.includesGutters?'&nbsp;<span style="font-size:8px;opacity:0.6">+G</span>':''}</span>
         </div>
         <div class="pill-r2">
           ${j.steepPitch?'<span class="ptag tag-steep">⚠STEEP</span>':''}
+          ${isMultiCrew?`<span class="ptag tag-multicrew">×${j.installCrewIds.length}crews</span>`:''}
           <span class="ptag ${appr.cls}">${appr.label}</span>
           ${em?`<span class="ptag tag-existing">Rem:${em.name}</span>`:''}
           ${j.existingDeckType?`<span class="ptag tag-deck">${rbDeckLabel(j.existingDeckType)}</span>`:''}
           ${rc?`<span class="ptag tag-rc">${rc}</span>`:''}
+          ${activeCrew==='all'&&j.installCrewIds&&j.installCrewIds.length?`<span class="ptag tag-crew">${crewNames(j.installCrewIds)}</span>`:''}
         </div>
       </div>`;
     }).join('');
@@ -270,9 +265,10 @@ function renderLegend(){
   const matItems=roofMaterials.map(m=>`<div class="legend-item"><div class="legend-swatch" style="background:${m.colorBg};border:1.5px solid ${m.colorBorder}"></div><span>${m.name}</span></div>`).join('');
   const indicators=`
     <div class="legend-item"><span class="ptag tag-steep" style="font-size:10px;padding:2px 6px;">⚠STEEP</span><span>7:12+ pitch</span></div>
+    <div class="legend-item"><span class="ptag tag-multicrew" style="font-size:10px;padding:2px 6px;">×2crews</span><span>Multiple crews</span></div>
     <div class="legend-item"><span class="ptag tag-confirmed" style="font-size:10px;padding:2px 6px;">✓ Confirmed</span><span>Customer approved</span></div>
     <div class="legend-item"><span class="ptag tag-not-approved" style="font-size:10px;padding:2px 6px;">✗ Not Approved</span><span>Red border</span></div>
-    <div class="legend-item"><span class="ptag tag-existing" style="font-size:10px;padding:2px 6px;">Rem:Tile</span><span>Existing roof being removed</span></div>
+    <div class="legend-item"><span class="ptag tag-existing" style="font-size:10px;padding:2px 6px;">Rem:Tile</span><span>Existing roof</span></div>
     <div class="legend-item"><span class="ptag tag-rc" style="font-size:10px;padding:2px 6px;">RC</span><span>Roofing Consultant</span></div>`;
   document.getElementById('legend').innerHTML=`
     <div><div class="legend-group-label">New roof type (pill color)</div><div class="legend-items">${matItems}</div></div>
@@ -280,8 +276,7 @@ function renderLegend(){
 }
 
 async function openJob(id){
-  const job=allJobs.find(j=>j.id===id);if(!job)return;
-  activeJobId=id;
+  const job=allJobs.find(j=>j.id===id); if(!job)return;
   const nm=getMat(job.newRoofMaterialId), em=getMat(job.existingRoofMaterialId);
   const bg=nm?nm.colorBg:'#f0f0ec', text=nm?nm.colorText:'#888', border=nm?nm.colorBorder:'#ccc';
   document.getElementById('m-name').textContent=job.customer;
@@ -289,13 +284,14 @@ async function openJob(id){
   let badges=nm?`<span class="modal-badge" style="background:${bg};color:${text};border:1px solid ${border}">${nm.name}</span>`:'';
   if(job.steepPitch) badges+=`<span class="modal-badge" style="background:#FEF0E0;color:#A04000;border:1px solid #F0A500">⚠ STEEP 7:12+</span>`;
   if(job.includesGutters) badges+=`<span class="modal-badge" style="background:#C8EEE0;color:#085041;border:1px solid #1D9E75">+ Gutters</span>`;
+  if(job.installCrewIds&&job.installCrewIds.length>1) badges+=`<span class="modal-badge" style="background:#E8E6FD;color:#3C3489;">×${job.installCrewIds.length} crews</span>`;
   document.getElementById('m-badges').innerHTML=badges;
   const appr=rbApprovalInfo(job.startDateApproval);
   document.getElementById('m-approval').innerHTML=`<span class="approval-badge ${appr.fullCls}">${appr.label}</span>`;
   document.getElementById('m-rc').textContent=rcName(job.consultantId);
+  document.getElementById('m-crews').textContent=crewNames(job.installCrewIds);
   document.getElementById('m-addr').textContent=job.address||'—';
   document.getElementById('m-date').textContent=rbFmtFull(job.installDate);
-  document.getElementById('m-dur').textContent=job.duration||'—';
   document.getElementById('m-new-roof').textContent=nm?nm.name:'—';
   document.getElementById('m-existing-roof').textContent=em?em.name:'—';
   document.getElementById('m-deck').textContent=`${rbDeckLabel(job.existingDeckType)||'Unknown'} → ${rbDeckLabel(job.newDeckType)||'No change'}`;
@@ -307,49 +303,30 @@ async function openJob(id){
   const gs=document.getElementById('m-gutter-section');
   if(job.includesGutters){gs.style.display='block';document.getElementById('m-gutter-mat').textContent=job.gutterMaterials||'—';}
   else gs.style.display='none';
-  try{modalInsps=await apiFetch(`/api/jobs/${id}/inspections`);}catch{modalInsps=[];}
-  renderInspDisplay();
+  // Inspections — read only
+  try{ modalInsps=await apiFetch(`/api/jobs/${id}/inspections`); } catch{ modalInsps=[]; }
+  const display=document.getElementById('insp-display'), noMsg=document.getElementById('no-insp-msg');
+  if(!modalInsps.length){ display.innerHTML=''; noMsg.style.display='block'; }
+  else {
+    noMsg.style.display='none';
+    display.innerHTML=modalInsps.map(insp=>{ const t=INSP_TYPES.find(x=>x.value===insp.type)||INSP_TYPES[0]; return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0f0ec;"><span class="${t.cls}" style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:8px;">${t.label}</span><span style="font-size:12px;color:#555;">${insp.date?rbFmtD(insp.date):'No date set'}</span></div>`; }).join('');
+  }
+  // Warranty — read only
   const isReroof=nm&&!['Gutters Only','Repairs'].includes(nm.name);
-  document.getElementById('m-warranty-section').style.display=isReroof?'block':'none';
+  const ws=document.getElementById('m-warranty-section');
+  ws.style.display=isReroof?'block':'none';
   if(isReroof){
-    document.getElementById('m-warranty-toggle').checked=!!job.warranty;
     document.getElementById('m-warranty-badge').style.display=job.warranty?'inline-flex':'none';
-    const mat=job.materials||'';
-    let mfr='GAF';
-    if(mat.includes('Owens'))mfr='Owens Corning';
-    else if(mat.includes('CertainTeed'))mfr='CertainTeed';
-    else if(mat.includes('Boral'))mfr='Boral';
+    const mat=job.materials||''; let mfr='GAF';
+    if(mat.includes('Owens'))mfr='Owens Corning'; else if(mat.includes('CertainTeed'))mfr='CertainTeed'; else if(mat.includes('Boral'))mfr='Boral';
     document.getElementById('m-warranty-desc').textContent=mfr+' extended warranty program';
   }
   document.getElementById('modal-overlay').classList.add('open');
 }
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');activeJobId=null;renderCalendar();}
-function handleOverlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
-async function toggleWarranty(checked){
-  if(!activeJobId)return;
-  const job=allJobs.find(j=>j.id===activeJobId);if(!job)return;
-  job.warranty=checked;
-  document.getElementById('m-warranty-badge').style.display=checked?'inline-flex':'none';
-  try{await apiPost('PATCH',`/api/jobs/${activeJobId}`,{warranty:checked});}catch(e){console.error(e);}
-}
-function renderInspDisplay(){
-  const display=document.getElementById('insp-display');
-  const noMsg=document.getElementById('no-insp-msg');
-  if(!modalInsps.length){
-    display.innerHTML=''; noMsg.style.display='block';
-  } else {
-    noMsg.style.display='none';
-    display.innerHTML=modalInsps.map(insp=>{
-      const t=INSP_TYPES.find(x=>x.value===insp.type)||INSP_TYPES[0];
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0f0ec;">
-        <span class="${t.cls}" style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:8px;">${t.label}</span>
-        <span style="font-size:12px;color:#555;">${insp.date?rbFmtD(insp.date):'No date set'}</span>
-      </div>`;
-    }).join('');
-  }
-}
-function changeMonth(dir){viewMonth+=dir;if(viewMonth>11){viewMonth=0;viewYear++;}if(viewMonth<0){viewMonth=11;viewYear--;}renderCalendar();}
-function selectCrew(id){activeCrew=id;renderCrewTabs();renderCalendar();}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); renderCalendar(); }
+function handleOverlayClick(e){ if(e.target===document.getElementById('modal-overlay'))closeModal(); }
+function changeMonth(dir){ viewMonth+=dir; if(viewMonth>11){viewMonth=0;viewYear++;} if(viewMonth<0){viewMonth=11;viewYear--;} renderCalendar(); }
+function selectCrew(id){ activeCrew=id; renderCrewTabs(); renderCalendar(); }
 
 loadAll();
 </script>
