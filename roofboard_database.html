@@ -184,6 +184,8 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
     <button class="btn btn-ghost" id="users-btn" onclick="window.location.href='roofboard_users.html'" style="display:none"><i class="ti ti-users"></i></button>
     <button class="btn btn-ghost" id="crews-btn" onclick="window.location.href='roofboard_crews.html'" style="display:none"><i class="ti ti-users-group"></i></button>
     <button class="btn btn-ghost" onclick="logout()"><i class="ti ti-logout"></i></button>
+    <button class="btn btn-ghost" id="export-btn" onclick="doExport()" style="display:none" title="Export backup"><i class="ti ti-download"></i> Backup</button>
+    <button class="btn btn-ghost" id="import-btn" onclick="openImport()" style="display:none" title="Import backup"><i class="ti ti-upload"></i> Restore</button>
     <button class="btn btn-primary" id="add-job-btn" onclick="openAdd()" style="display:none"><i class="ti ti-plus"></i> Add Job</button>
   </div>
 </div>
@@ -237,7 +239,36 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
 <div class="pager" id="pager"></div>
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Import Modal -->
+<div class="overlay" id="import-modal" onclick="maybeClose(event,'import-modal')">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hdr">
+      <div class="modal-title">Restore from Backup</div>
+      <button class="icon-btn" onclick="closeModal('import-modal')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:#555;line-height:1.6;">
+        Select a backup JSON file previously exported from RoofBoard.
+        Existing records will be updated. New records will be added.
+        Nothing will be deleted.
+      </div>
+      <div style="background:#FEF0E6;border-radius:8px;padding:10px 12px;font-size:12px;color:#894020;font-weight:600;">
+        ⚠ Only restore from a file you exported yourself from this system.
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Backup File (.json)</label>
+        <input type="file" class="fi" id="import-file" accept=".json" style="padding:8px;">
+      </div>
+      <div id="import-result" style="display:none;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal('import-modal')">Cancel</button>
+      <button class="btn btn-primary" id="import-confirm-btn" onclick="doImport()">
+        <i class="ti ti-upload"></i> Restore Data
+      </button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="job-modal" onclick="maybeClose(event,'job-modal')">
   <div class="modal">
     <div class="modal-hdr">
@@ -1231,6 +1262,57 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function maybeClose(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer();closeModal('job-modal');} });
 
+// ── Export / Import ───────────────────────────────────────────
+async function doExport(){
+  try {
+    const r=await authFetch('GET','/api/export');
+    if(!r.ok){ const d=await r.json(); alert(d.error||'Export failed'); return; }
+    const data=await r.json();
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`roofboard-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e){ if(e.message!=='Unauth') alert('Export failed: '+e.message); }
+}
+
+function openImport(){
+  document.getElementById('import-file').value='';
+  document.getElementById('import-result').style.display='none';
+  document.getElementById('import-modal').classList.add('open');
+}
+
+async function doImport(){
+  const file=document.getElementById('import-file').files[0];
+  if(!file){ alert('Please select a backup file.'); return; }
+  const resultEl=document.getElementById('import-result');
+  const btn=document.getElementById('import-confirm-btn');
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2"></i> Restoring…';
+  try {
+    const text=await file.text();
+    const data=JSON.parse(text);
+    const r=await authFetch('POST','/api/import',data);
+    const d=await r.json();
+    if(!r.ok){
+      resultEl.textContent='Restore failed: '+(d.error||'Unknown error');
+      resultEl.style.cssText='display:block;background:#FDE6D8;color:#712B13;';
+    } else {
+      resultEl.textContent=`✓ Restored: ${d.imported.jobs} jobs, ${d.imported.crews} crews, ${d.imported.consultants} consultants, ${d.imported.roofMaterials} materials`;
+      resultEl.style.cssText='display:block;background:#D5F0E8;color:#085041;';
+      await loadRefData();
+      await loadJobs();
+    }
+  } catch(e){
+    resultEl.textContent='Restore failed: '+(e.message||'Invalid file');
+    resultEl.style.cssText='display:block;background:#FDE6D8;color:#712B13;';
+  }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-upload"></i> Restore Data';
+}
+
 // ── Logout ────────────────────────────────────────────────────
 function logout(){
   try{fetch(RB_API+'/api/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}});}catch(e){}
@@ -1248,6 +1330,10 @@ function initUI(){
   if(canAdd)  document.getElementById('add-job-btn').style.display='inline-flex';
   if(canUsers) document.getElementById('users-btn').style.display='inline-flex';
   if(canManageCrews) document.getElementById('crews-btn').style.display='inline-flex';
+  if(['admin','scheduler'].includes(userRole)){
+    document.getElementById('export-btn').style.display='inline-flex';
+    document.getElementById('import-btn').style.display='inline-flex';
+  }
   // Status filter default
   if(isSupplier||isSales||isRFore) document.getElementById('f-status').value='active';
 }
