@@ -208,16 +208,47 @@ function sessionExpiry(){ const d=new Date(); d.setHours(d.getHours()+8); return
 
 function parseJob(row){
   if(!row) return null;
+  // Parse crew fields — handle both legacy string IDs and JSON arrays
+  function parseCrews(val){
+    if(!val) return [];
+    try {
+      const parsed = JSON.parse(val);
+      if(Array.isArray(parsed)) return parsed.filter(Boolean);
+      return [parsed].filter(Boolean);
+    } catch {
+      return [val].filter(Boolean);
+    }
+  }
   return {
     ...row,
-    includesGutters: !!row.includesGutters,
-    reroofComplete:  !!row.reroofComplete,
-    warranty:        !!row.warranty,
-    steepPitch:      !!row.steepPitch,
-    archived:        !!row.archived,
-    layerStack:      JSON.parse(row.layerStack||'[]'),
+    includesGutters:  !!row.includesGutters,
+    reroofComplete:   !!row.reroofComplete,
+    warranty:         !!row.warranty,
+    steepPitch:       !!row.steepPitch,
+    archived:         !!row.archived,
+    layerStack:       JSON.parse(row.layerStack||'[]'),
+    removalCrewIds:   parseCrews(row.removalCrewId),
+    installCrewIds:   parseCrews(row.installCrewId),
+    gutterCrewIds:    parseCrews(row.gutterCrewId),
   };
 }
+
+// ── Migration: convert legacy single-crew strings to JSON arrays ──
+try {
+  const jobs = db.prepare('SELECT id, removalCrewId, installCrewId, gutterCrewId FROM jobs').all();
+  const update = db.prepare('UPDATE jobs SET removalCrewId=?, installCrewId=?, gutterCrewId=? WHERE id=?');
+  db.transaction(() => {
+    jobs.forEach(j => {
+      function toArray(val) {
+        if(!val) return '[]';
+        try { const p=JSON.parse(val); if(Array.isArray(p)) return val; return JSON.stringify([val]); }
+        catch { return JSON.stringify([val]); }
+      }
+      update.run(toArray(j.removalCrewId), toArray(j.installCrewId), toArray(j.gutterCrewId), j.id);
+    });
+  })();
+  console.log('Crew migration complete');
+} catch(e) { console.error('Crew migration error:', e.message); }
 
 // ── Auth middleware ───────────────────────────────────────────
 function requireAuth(req,res,next){
@@ -436,25 +467,33 @@ app.get('/api/jobs',(req,res)=>{
     const {view,crewId,updatedAfter,archived}=req.query;
     let sql='SELECT * FROM jobs WHERE 1=1';
     const params=[];
-    // By default only return active (non-archived) jobs
     if(archived==='1'){ sql+=' AND archived=1'; }
     else { sql+=' AND archived=0'; }
     if(updatedAfter){ sql+=' AND updatedAt > ?'; params.push(updatedAfter); }
     if(view==='install'){
       sql+=' AND installDate IS NOT NULL AND installDate != \'\'';
-      sql+=' AND installCrewId IS NOT NULL AND installCrewId != \'\'';
-      if(crewId){ sql+=' AND installCrewId = ?'; params.push(crewId); }
+      sql+=' AND installCrewId IS NOT NULL AND installCrewId != \'\' AND installCrewId != \'[]\'';
     } else if(view==='gutters'){
       sql+=' AND gutterDate IS NOT NULL AND gutterDate != \'\'';
-      if(crewId){ sql+=' AND gutterCrewId = ?'; params.push(crewId); }
+      sql+=' AND gutterCrewId IS NOT NULL AND gutterCrewId != \'\' AND gutterCrewId != \'[]\'';
     } else if(view==='removal'){
-      if(crewId){ sql+=' AND removalCrewId = ?'; params.push(crewId); }
+      sql+=' AND tearoffDate IS NOT NULL AND tearoffDate != \'\'';
+      sql+=' AND removalCrewId IS NOT NULL AND removalCrewId != \'\' AND removalCrewId != \'[]\'';
     }
     sql+=' ORDER BY jobNum ASC';
-    res.json(db.prepare(sql).all(...params).map(parseJob));
+    let jobs = db.prepare(sql).all(...params).map(parseJob);
+    // Post-filter by crewId if specified (crew is now an array)
+    if(crewId){
+      jobs = jobs.filter(j=>{
+        if(view==='install') return j.installCrewIds.includes(crewId);
+        if(view==='gutters') return j.gutterCrewIds.includes(crewId);
+        if(view==='removal') return j.removalCrewIds.includes(crewId);
+        return true;
+      });
+    }
+    res.json(jobs);
   } catch(e){ res.status(500).json({error:e.message}); }
 });
-
 app.get('/api/jobs/:id',(req,res)=>{
   try {
     const row=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
@@ -480,22 +519,24 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
     const j=sanitizeJob(req.body);
     if(!j.jobNum||!j.customer) return res.status(400).json({error:'jobNum and customer required'});
     const id=j.id||newId('j'), ts=now();
+    const removalCrewIds=JSON.stringify(Array.isArray(j.removalCrewIds)?j.removalCrewIds:[]);
+    const installCrewIds=JSON.stringify(Array.isArray(j.installCrewIds)?j.installCrewIds:[]);
+    const gutterCrewIds=JSON.stringify(Array.isArray(j.gutterCrewIds)?j.gutterCrewIds:[]);
     db.prepare(`INSERT INTO jobs (
       id,jobNum,customer,address,newRoofMaterialId,existingRoofMaterialId,
       existingDeckType,newDeckType,existingRoofNotes,steepPitch,
       removalCrewId,tearoffDate,installCrewId,installDate,gutterCrewId,gutterDate,
-      duration,gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
+      gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
       includesGutters,reroofComplete,warranty,layerStack,materials,notes,
       startDateApproval,consultantId,backlogCategory,archived,createdAt,updatedAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
       id,j.jobNum,j.customer,j.address||'',
       j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
       j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
       j.steepPitch?1:0,
-      j.removalCrewId||null,j.tearoffDate||null,
-      j.installCrewId||null,j.installDate||null,
-      j.gutterCrewId||null,j.gutterDate||null,
-      j.duration||'1 day',
+      removalCrewIds,j.tearoffDate||null,
+      installCrewIds,j.installDate||null,
+      gutterCrewIds,j.gutterDate||null,
       j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
@@ -511,15 +552,13 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
   try {
     const role=req.user.role;
     const body=req.body;
-    const existing=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
-    if(!existing) return res.status(404).json({error:'Not found'});
 
     // Supplier — no edits
     if(role==='supplier') return res.status(403).json({error:'Permission denied'});
 
-    // Removal foreman — only removalCrewId
+    // Removal foreman — only removalCrewIds
     if(role==='removal_foreman'){
-      const allowed=['removalCrewId'];
+      const allowed=['removalCrewIds'];
       const bad=Object.keys(body).filter(k=>!allowed.includes(k));
       if(bad.length>0) return res.status(403).json({error:'Removal foreman can only assign removal crew'});
     }
@@ -538,12 +577,18 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       if(bad.length>0) return res.status(403).json({error:'Office staff cannot edit scheduling dates'});
     }
 
-    const j={...parseJob(existing),...sanitizeJob(body)};
+    const existing=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
+    if(!existing) return res.status(404).json({error:'Not found'});
+    const ep=parseJob(existing);
+    const j={...ep,...sanitizeJob(body)};
+    const removalCrewIds=JSON.stringify(Array.isArray(j.removalCrewIds)?j.removalCrewIds:ep.removalCrewIds);
+    const installCrewIds=JSON.stringify(Array.isArray(j.installCrewIds)?j.installCrewIds:ep.installCrewIds);
+    const gutterCrewIds=JSON.stringify(Array.isArray(j.gutterCrewIds)?j.gutterCrewIds:ep.gutterCrewIds);
     db.prepare(`UPDATE jobs SET
       jobNum=?,customer=?,address=?,newRoofMaterialId=?,existingRoofMaterialId=?,
       existingDeckType=?,newDeckType=?,existingRoofNotes=?,steepPitch=?,
       removalCrewId=?,tearoffDate=?,installCrewId=?,installDate=?,gutterCrewId=?,gutterDate=?,
-      duration=?,gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
+      gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
       includesGutters=?,reroofComplete=?,warranty=?,layerStack=?,materials=?,notes=?,
       startDateApproval=?,consultantId=?,backlogCategory=?,updatedAt=?
     WHERE id=?`).run(
@@ -551,10 +596,9 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
       j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
       j.steepPitch?1:0,
-      j.removalCrewId||null,j.tearoffDate||null,
-      j.installCrewId||null,j.installDate||null,
-      j.gutterCrewId||null,j.gutterDate||null,
-      j.duration||'1 day',
+      removalCrewIds,j.tearoffDate||null,
+      installCrewIds,j.installDate||null,
+      gutterCrewIds,j.gutterDate||null,
       j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,

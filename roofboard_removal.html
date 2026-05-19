@@ -53,7 +53,8 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .tag-steep        { background: #FEF0E0; color: #A04000; border: 1px solid #F0A500; }
 .tag-existing     { background: rgba(0,0,0,0.08); color: inherit; }
 .tag-deck         { background: rgba(0,0,0,0.06); color: inherit; font-style: italic; }
-/* Backlog panel */
+.tag-crew         { background: #FAE0E0; color: #791F1F; }
+.tag-multicrew    { background: #E8E6FD; color: #3C3489; font-weight: 900; }
 .backlog-panel { background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 12px; }
 .backlog-count { font-size: 10px; color: #888; background: #f0f0ec; padding: 2px 8px; border-radius: 8px; }
 .backlog-section-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 0 4px; border-bottom: 0.5px solid #f0f0ec; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
@@ -66,13 +67,11 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .bi-name { font-size: 12px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bi-r2 { font-size: 10px; opacity: 0.75; }
 .bi-r3 { display: flex; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
-/* Legend */
 .legend { margin-top: 10px; background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
 .legend-group-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
 .legend-items { display: flex; gap: 8px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
 .legend-swatch { width: 22px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-/* Modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal { background: #fff; border-radius: 12px; padding: 18px 20px; width: 440px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
@@ -93,21 +92,12 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .gutter-remove { background: #FDE6D8; color: #712B13; border: 1px solid #E8856A; }
 .gutter-keep   { background: #DCF0CC; color: #27500A; border: 1px solid #639922; }
 .gutter-na     { background: #f0f0ec; color: #999; border: 1px solid #ddd; }
-/* Layer stack in modal */
 .layers-section { margin-top: 12px; padding-top: 12px; border-top: 1.5px solid #f0f0ec; }
-.layers-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.layers-title { font-size: 11px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
+.layers-title { font-size: 11px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
 .layers-title i { color: #D85A30; }
-.layer-count-ctrl { display: flex; align-items: center; gap: 6px; }
-.lc-btn { width: 24px; height: 24px; border-radius: 5px; border: 0.5px solid #ccc; background: #f0f0ec; color: #555; cursor: pointer; font-family: inherit; font-size: 14px; display: flex; align-items: center; justify-content: center; }
-.lc-btn:disabled { opacity: 0.35; cursor: default; }
-.lc-num { font-size: 14px; font-weight: 700; min-width: 16px; text-align: center; }
 .layer-row-item { display: grid; grid-template-columns: 80px 1fr; gap: 6px; align-items: center; margin-bottom: 3px; }
 .layer-pos-lbl { font-size: 10px; color: #999; text-align: right; padding-right: 4px; }
 .layer-arrow { padding: 1px 0 1px 84px; color: #ccc; font-size: 10px; }
-.layer-select { font-size: 12px; font-family: inherit; border: 0.5px solid #d0d0cc; border-radius: 5px; padding: 5px 7px; background: #fff; color: #222; cursor: pointer; width: 100%; }
-.save-layers-btn { margin-top: 8px; width: 100%; padding: 8px; border-radius: 7px; background: #D85A30; color: #fff; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; }
-.save-layers-confirm { font-size: 11px; color: #1D9E75; font-weight: 600; text-align: center; margin-top: 5px; display: none; }
 </style>
 </head>
 <body>
@@ -118,9 +108,7 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <span style="font-size:12px;font-weight:700;color:#fff;background:#D85A30;padding:2px 8px;border-radius:8px;">Removal</span>
   </div>
   <div class="controls">
-    <select class="rc-filter" id="rc-filter" onchange="renderTwoWeek();renderBacklog()">
-      <option value="">All Consultants</option>
-    </select>
+    <select class="rc-filter" id="rc-filter" onchange="renderTwoWeek();renderBacklog()"><option value="">All Consultants</option></select>
     <span class="live-dot"></span>
   </div>
 </div>
@@ -139,7 +127,6 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     </div>
     <div id="two-week-grid"></div>
   </div>
-
   <div class="backlog-panel">
     <div class="panel-header">
       <div class="panel-title"><i class="ti ti-list" style="font-size:14px;color:#D85A30"></i> Backlog</div>
@@ -161,10 +148,10 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-badges" id="m-badges"></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar-check" style="font-size:12px"></i> Customer Approval</div><div class="modal-value" id="m-approval"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-user" style="font-size:12px"></i> Roofing Consultant</div><div class="modal-value" id="m-rc"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-users-group" style="font-size:12px"></i> Removal Crews</div><div class="modal-value" id="m-crews"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-map-pin" style="font-size:12px"></i> Address</div><div class="modal-value" id="m-addr"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-hammer" style="font-size:12px"></i> Tear-off Date</div><div class="modal-value" id="m-tearoff"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar" style="font-size:12px"></i> Install Date</div><div class="modal-value" id="m-install"></div></div>
-    <div class="modal-field"><div class="modal-label"><i class="ti ti-clock" style="font-size:12px"></i> Duration</div><div class="modal-value" id="m-dur"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home" style="font-size:12px"></i> New Roof</div><div class="modal-value" id="m-new-roof"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home-off" style="font-size:12px"></i> Existing Roof</div><div class="modal-value" id="m-existing-roof"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-layers" style="font-size:12px"></i> Deck (Existing → New)</div><div class="modal-value" id="m-deck"></div></div>
@@ -173,29 +160,18 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-field"><div class="modal-label"><i class="ti ti-droplet" style="font-size:12px"></i> Gutters</div><div class="modal-value" id="m-gutters"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Notes</div><div class="modal-value" id="m-notes"></div></div>
     <div class="layers-section">
-      <div class="layers-header">
-        <div class="layers-title"><i class="ti ti-stack-2"></i> Roof Layers</div>
-        <div class="layer-count-ctrl">
-          <span style="font-size:11px;color:#888;">Layers:</span>
-          <button class="lc-btn" id="layer-minus" onclick="changeLayerCount(-1)">−</button>
-          <span class="lc-num" id="layer-count-num">1</span>
-          <button class="lc-btn" id="layer-plus" onclick="changeLayerCount(1)">+</button>
-        </div>
-      </div>
+      <div class="layers-title"><i class="ti ti-stack-2"></i> Roof Layers</div>
       <div id="layer-stack"></div>
-      <button class="save-layers-btn" onclick="saveLayers()"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i> Save layers</button>
-      <div class="save-layers-confirm" id="save-layers-confirm">✓ Layers saved</div>
     </div>
   </div>
 </div>
 
 <script>
 const TODAY=new Date();
-let weekOffset=0, activeCrew=null, activeJobId=null;
+let weekOffset=0, activeCrew='all', activeJobId=null;
 let allJobs=[], consultants=[], roofMaterials=[], removalCrews=[];
 
-async function apiFetch(path){const r=await fetch(RB_API+path);if(!r.ok)throw new Error('API '+r.status);return r.json();}
-async function apiPost(method,path,body){const r=await fetch(RB_API+path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error('API '+r.status);return r.json();}
+async function apiFetch(path){ const r=await fetch(RB_API+path); if(!r.ok)throw new Error('API '+r.status); return r.json(); }
 
 async function loadAll(){
   try {
@@ -207,10 +183,9 @@ async function loadAll(){
     const sel=document.getElementById('rc-filter');
     sel.innerHTML='<option value="">All Consultants</option>';
     consultants.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
-    if(removalCrews.length&&!activeCrew) activeCrew=removalCrews[0].id;
     renderCrewTabs();
     await loadJobs();
-  } catch(e){console.error(e);}
+  } catch(e){ console.error(e); }
 }
 
 async function loadJobs(){
@@ -222,57 +197,74 @@ async function loadJobs(){
       installDateObj:j.installDate?new Date(j.installDate+'T00:00:00'):null,
       isScheduled:!!j.tearoffDate,
     }));
-    renderTwoWeek();renderBacklog();renderLegend();
-  } catch(e){console.error(e);}
+    renderTwoWeek(); renderBacklog(); renderLegend();
+  } catch(e){ console.error(e); }
 }
 setInterval(loadJobs,30000);
 
-function getMat(id){return roofMaterials.find(m=>m.id===id)||null;}
-function rcInitials(id){if(!id)return'';const c=consultants.find(x=>x.id===id);return c?c.initials:'';}
-function rcName(id){if(!id)return'—';const c=consultants.find(x=>x.id===id);return c?c.name:'—';}
-function sameDay(a,b){return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
-function fmtShort(d){return d?d.toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';}
+function getMat(id){ return roofMaterials.find(m=>m.id===id)||null; }
+function rcInitials(id){ if(!id)return''; const c=consultants.find(x=>x.id===id); return c?c.initials:''; }
+function rcName(id){ if(!id)return'—'; const c=consultants.find(x=>x.id===id); return c?c.name:'—'; }
+function crewNames(ids){ if(!ids||!ids.length)return'Unassigned'; return ids.map(id=>{ const c=removalCrews.find(x=>x.id===id); return c?c.name:id; }).join(', '); }
+function sameDay(a,b){ return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function fmtShort(d){ return d?d.toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—'; }
 
 function renderCrewTabs(){
-  document.getElementById('crew-tabs').innerHTML=removalCrews.map(c=>
-    `<button class="crew-btn${c.id===activeCrew?' active':''}" style="${c.id===activeCrew?`background:#D85A30;color:#fff;border-color:#D85A30`:''}" onclick="selectCrew('${c.id}')">${c.name}</button>`
-  ).join('');
+  const allActive=activeCrew==='all';
+  let html=`<button class="crew-btn${allActive?' active':''}" style="${allActive?'background:#444;color:#fff;border-color:#444':''}" onclick="selectCrew('all')">All Crews</button>`;
+  html+=removalCrews.map(c=>{
+    const isActive=activeCrew===c.id;
+    return `<button class="crew-btn${isActive?' active':''}" style="${isActive?'background:#D85A30;color:#fff;border-color:#D85A30':''}" onclick="selectCrew('${c.id}')">${c.name}</button>`;
+  }).join('');
+  document.getElementById('crew-tabs').innerHTML=html;
+}
+
+function getFilteredJobs(scheduled){
+  const rcFilter=document.getElementById('rc-filter').value;
+  let jobs=allJobs.filter(j=>j.isScheduled===scheduled);
+  if(activeCrew!=='all') jobs=jobs.filter(j=>j.removalCrewIds&&j.removalCrewIds.includes(activeCrew));
+  if(rcFilter) jobs=jobs.filter(j=>j.consultantId===rcFilter);
+  return jobs;
 }
 
 function getWeekStart(){
-  const d=new Date(TODAY),dow=d.getDay(),mon=new Date(d);
+  const d=new Date(TODAY), dow=d.getDay(), mon=new Date(d);
   mon.setDate(d.getDate()-(dow===0?6:dow-1)+weekOffset*14);
   return mon;
 }
 
 function renderTwoWeek(){
-  const rcFilter=document.getElementById('rc-filter').value;
-  const ws=getWeekStart(),we=new Date(ws);we.setDate(ws.getDate()+13);
+  const ws=getWeekStart(), we=new Date(ws); we.setDate(ws.getDate()+13);
   document.getElementById('week-range').textContent=fmtShort(ws)+' – '+fmtShort(we);
-  let scheduled=allJobs.filter(j=>j.isScheduled&&(!activeCrew||j.removalCrewId===activeCrew));
-  if(rcFilter) scheduled=scheduled.filter(j=>j.consultantId===rcFilter);
+  let scheduled=getFilteredJobs(true);
   const workdays=[];
-  for(let i=0;i<14;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);if(d.getDay()!==0&&d.getDay()!==6)workdays.push(d);}
-  const w1=workdays.slice(0,5),w2=workdays.slice(5,10);
+  for(let i=0;i<14;i++){ const d=new Date(ws); d.setDate(ws.getDate()+i); if(d.getDay()!==0&&d.getDay()!==6)workdays.push(d); }
+  const w1=workdays.slice(0,5), w2=workdays.slice(5,10);
+
   function buildWeek(days){
     const wl=`<div class="week-label">Week of ${fmtShort(days[0])}</div>`;
     const rows=days.map(day=>{
       const isToday=sameDay(day,TODAY);
-      const dayJobs=scheduled.filter(j=>sameDay(j.tearOffDate,day));
+      let dayJobs=scheduled.filter(j=>sameDay(j.tearOffDate,day));
+      // Deduplicate on All tab
+      if(activeCrew==='all'){ const seen=new Set(); dayJobs=dayJobs.filter(j=>{ if(seen.has(j.id))return false; seen.add(j.id); return true; }); }
       const jobsHtml=dayJobs.length===0?'<div class="empty-slot"></div>':dayJobs.map(j=>{
-        const nm=getMat(j.newRoofMaterialId),em=getMat(j.existingRoofMaterialId);
-        const bg=nm?nm.colorBg:'#f0f0ec',text=nm?nm.colorText:'#888',border=nm?nm.colorBorder:'#ccc';
+        const nm=getMat(j.newRoofMaterialId), em=getMat(j.existingRoofMaterialId);
+        const bg=nm?nm.colorBg:'#f0f0ec', text=nm?nm.colorText:'#888', border=nm?nm.colorBorder:'#ccc';
         const appr=rbApprovalInfo(j.startDateApproval);
         const notApproved=j.startDateApproval==='not_approved';
         const rc=rcInitials(j.consultantId);
+        const isMultiCrew=j.removalCrewIds&&j.removalCrewIds.length>1;
         return `<div class="job-card${notApproved?' not-approved':''}" style="background:${bg};color:${text};border-left-color:${border}" onclick="openJob('${j.id}')">
           <div class="jc-r1"><span class="jc-num">${j.jobNum}</span><span class="jc-name">${j.customer}</span></div>
           <div class="jc-r2">
             ${j.steepPitch?'<span class="ptag tag-steep">⚠STEEP</span>':''}
+            ${isMultiCrew?`<span class="ptag tag-multicrew">×${j.removalCrewIds.length}crews</span>`:''}
             <span class="ptag ${appr.cls}">${appr.label}</span>
             ${em?`<span class="ptag tag-existing">Rem:${em.name}</span>`:''}
             ${j.existingDeckType?`<span class="ptag tag-deck">${rbDeckLabel(j.existingDeckType)}</span>`:''}
             ${rc?`<span class="ptag tag-rc">${rc}</span>`:''}
+            ${activeCrew==='all'?`<span class="ptag tag-crew">${crewNames(j.removalCrewIds)}</span>`:''}
           </div>
         </div>`;
       }).join('');
@@ -292,44 +284,38 @@ function renderTwoWeek(){
 function renderBacklog(){
   const rcFilter=document.getElementById('rc-filter').value;
   let backlog=allJobs.filter(j=>!j.isScheduled);
-  if(activeCrew) backlog=backlog.filter(j=>!j.removalCrewId||j.removalCrewId===activeCrew);
+  if(activeCrew!=='all') backlog=backlog.filter(j=>!j.removalCrewIds||j.removalCrewIds.length===0||j.removalCrewIds.includes(activeCrew));
   if(rcFilter) backlog=backlog.filter(j=>j.consultantId===rcFilter);
+  // Deduplicate
+  const seen=new Set(); backlog=backlog.filter(j=>{ if(seen.has(j.id))return false; seen.add(j.id); return true; });
   document.getElementById('backlog-count').textContent=backlog.length+' pending';
 
-  // Sort into 3 sections: Regular → By Month (next month first) → On Hold
   const regular=backlog.filter(j=>j.backlogCategory==='regular'||!j.backlogCategory);
   const onHold=backlog.filter(j=>j.backlogCategory==='on_hold');
   const byMonth=backlog.filter(j=>MONTH_ORDER.includes(j.backlogCategory));
-
-  // Sort each by jobNum
-  function sortByJob(arr){return arr.sort((a,b)=>{const na=parseInt((a.jobNum||'0').replace(/\D/g,'')),nb=parseInt((b.jobNum||'0').replace(/\D/g,''));return na-nb;});}
-  sortByJob(regular);sortByJob(onHold);
-
-  // Group byMonth by month, starting from next month
-  const now=new Date(),nextMonthIdx=(now.getMonth()+1)%12;
-  const orderedMonths=[];
+  function sortByJob(arr){ return arr.sort((a,b)=>{ const na=parseInt((a.jobNum||'0').replace(/\D/g,'')),nb=parseInt((b.jobNum||'0').replace(/\D/g,'')); return na-nb; }); }
+  sortByJob(regular); sortByJob(onHold);
+  const now=new Date(), nextMonthIdx=(now.getMonth()+1)%12;
+  const orderedMonths=[], monthGroups={};
   for(let i=0;i<12;i++) orderedMonths.push(MONTH_ORDER[(nextMonthIdx+i)%12]);
-  const monthGroups={};
-  byMonth.forEach(j=>{
-    if(!monthGroups[j.backlogCategory]) monthGroups[j.backlogCategory]=[];
-    monthGroups[j.backlogCategory].push(j);
-  });
-  orderedMonths.forEach(m=>{ if(monthGroups[m]) sortByJob(monthGroups[m]); });
+  byMonth.forEach(j=>{ if(!monthGroups[j.backlogCategory])monthGroups[j.backlogCategory]=[]; monthGroups[j.backlogCategory].push(j); });
+  orderedMonths.forEach(m=>{ if(monthGroups[m])sortByJob(monthGroups[m]); });
 
   function renderItem(j){
-    const nm=getMat(j.newRoofMaterialId),em=getMat(j.existingRoofMaterialId);
-    const bg=nm?nm.colorBg:'#f0f0ec',text=nm?nm.colorText:'#888',border=nm?nm.colorBorder:'#ccc';
+    const nm=getMat(j.newRoofMaterialId), em=getMat(j.existingRoofMaterialId);
+    const bg=nm?nm.colorBg:'#f0f0ec', text=nm?nm.colorText:'#888', border=nm?nm.colorBorder:'#ccc';
     const appr=rbApprovalInfo(j.startDateApproval);
     const notApproved=j.startDateApproval==='not_approved';
     const rc=rcInitials(j.consultantId);
+    const isMultiCrew=j.removalCrewIds&&j.removalCrewIds.length>1;
     return `<div class="backlog-item${notApproved?' not-approved':''}" style="background:${bg};color:${text};border-left-color:${border}" onclick="openJob('${j.id}')">
       <div class="bi-r1"><span class="bi-num">${j.jobNum}</span><span class="bi-name">${j.customer}</span></div>
       <div class="bi-r2"><i class="ti ti-map-pin" style="font-size:9px"></i> ${j.address||'No address'} · ${nm?nm.name:'?'}</div>
       <div class="bi-r3">
         ${j.steepPitch?'<span class="ptag tag-steep">⚠STEEP</span>':''}
+        ${isMultiCrew?`<span class="ptag tag-multicrew">×${j.removalCrewIds.length}crews</span>`:''}
         <span class="ptag ${appr.cls}">${appr.label}</span>
         ${em?`<span class="ptag tag-existing">Rem:${em.name}</span>`:''}
-        ${j.existingDeckType?`<span class="ptag tag-deck">${rbDeckLabel(j.existingDeckType)}</span>`:''}
         ${rc?`<span class="ptag tag-rc">${rc}</span>`:''}
         ${j.installDateObj?`<span style="font-size:9px;opacity:0.7"><i class="ti ti-calendar" style="font-size:9px"></i> Install: ${fmtShort(j.installDateObj)}</span>`:''}
       </div>
@@ -337,21 +323,9 @@ function renderBacklog(){
   }
 
   let html='';
-  if(regular.length){
-    html+=`<div class="backlog-section-label"><i class="ti ti-list" style="font-size:11px"></i> Regular (${regular.length})</div>`;
-    html+=regular.map(renderItem).join('');
-  }
-  orderedMonths.forEach(m=>{
-    if(monthGroups[m]&&monthGroups[m].length){
-      const mLabel=BACKLOG_CATEGORIES.find(c=>c.value===m)?.label||m;
-      html+=`<div class="backlog-section-label"><i class="ti ti-calendar" style="font-size:11px"></i> ${mLabel} (${monthGroups[m].length})</div>`;
-      html+=monthGroups[m].map(renderItem).join('');
-    }
-  });
-  if(onHold.length){
-    html+=`<div class="backlog-section-label"><i class="ti ti-pause" style="font-size:11px"></i> On Hold (${onHold.length})</div>`;
-    html+=onHold.map(renderItem).join('');
-  }
+  if(regular.length){ html+=`<div class="backlog-section-label"><i class="ti ti-list" style="font-size:11px"></i> Regular (${regular.length})</div>`; html+=regular.map(renderItem).join(''); }
+  orderedMonths.forEach(m=>{ if(monthGroups[m]&&monthGroups[m].length){ const mLabel=BACKLOG_CATEGORIES.find(c=>c.value===m)?.label||m; html+=`<div class="backlog-section-label"><i class="ti ti-calendar" style="font-size:11px"></i> ${mLabel} (${monthGroups[m].length})</div>`; html+=monthGroups[m].map(renderItem).join(''); } });
+  if(onHold.length){ html+=`<div class="backlog-section-label"><i class="ti ti-pause" style="font-size:11px"></i> On Hold (${onHold.length})</div>`; html+=onHold.map(renderItem).join(''); }
   if(!html) html='<div style="font-size:12px;color:#ccc;text-align:center;padding:20px 0;">No pending jobs</div>';
   document.getElementById('backlog-scroll').innerHTML=html;
 }
@@ -360,6 +334,7 @@ function renderLegend(){
   const matItems=roofMaterials.map(m=>`<div class="legend-item"><div class="legend-swatch" style="background:${m.colorBg};border:1.5px solid ${m.colorBorder}"></div><span>${m.name}</span></div>`).join('');
   const indicators=`
     <div class="legend-item"><span class="ptag tag-steep" style="font-size:10px;padding:2px 6px;">⚠STEEP</span><span>7:12+ pitch</span></div>
+    <div class="legend-item"><span class="ptag tag-multicrew" style="font-size:10px;padding:2px 6px;">×2crews</span><span>Multiple crews</span></div>
     <div class="legend-item"><span class="ptag tag-confirmed" style="font-size:10px;padding:2px 6px;">✓ Confirmed</span><span>Customer approved</span></div>
     <div class="legend-item"><span class="ptag tag-not-approved" style="font-size:10px;padding:2px 6px;">✗ Not Approved</span><span>Red border</span></div>
     <div class="legend-item"><span class="ptag tag-existing" style="font-size:10px;padding:2px 6px;">Rem:Tile</span><span>Existing roof type</span></div>
@@ -369,66 +344,26 @@ function renderLegend(){
     <div><div class="legend-group-label">Indicators</div><div class="legend-items">${indicators}</div></div>`;
 }
 
-// Layer stack
-function getLayers(job){return(job.layerStack&&job.layerStack.length)?job.layerStack:[job.newRoofMaterialId||''];}
-function renderLayerStack(job){
-  const layers=getLayers(job);
-  document.getElementById('layer-count-num').textContent=layers.length;
-  document.getElementById('layer-minus').disabled=layers.length<=1;
-  document.getElementById('layer-plus').disabled=layers.length>=4;
-  document.getElementById('layer-stack').innerHTML=layers.map((matId,idx)=>{
-    const isTop=idx===0,isBot=idx===layers.length-1;
-    const pos=layers.length===1?'Only layer':isTop?'Top layer':isBot?'Bottom layer':`Layer ${idx+1}`;
-    const arrow=idx>0?`<div class="layer-arrow"><i class="ti ti-arrow-down"></i></div>`:'';
-    const opts=roofMaterials.map(m=>`<option value="${m.id}"${m.id===matId?' selected':''}>${m.name}</option>`).join('');
-    return `${arrow}<div class="layer-row-item">
-      <div class="layer-pos-lbl">${pos}</div>
-      <select class="layer-select" onchange="updateLayer('${job.id}',${idx},this.value)"><option value="">— Select —</option>${opts}</select>
-    </div>`;
-  }).join('');
-  document.getElementById('save-layers-confirm').style.display='none';
-}
-function changeLayerCount(dir){
-  if(!activeJobId)return;
-  const job=allJobs.find(j=>j.id===activeJobId);if(!job)return;
-  const layers=[...getLayers(job)];
-  if(dir===1&&layers.length<4)layers.push('');
-  else if(dir===-1&&layers.length>1)layers.pop();
-  job.layerStack=layers;renderLayerStack(job);
-}
-function updateLayer(jobId,idx,value){
-  const job=allJobs.find(j=>j.id===jobId);if(!job)return;
-  const layers=[...getLayers(job)];layers[idx]=value;job.layerStack=layers;
-}
-async function saveLayers(){
-  if(!activeJobId)return;
-  const job=allJobs.find(j=>j.id===activeJobId);if(!job)return;
-  try {
-    await apiPost('PATCH',`/api/jobs/${activeJobId}`,{layerStack:job.layerStack});
-    const c=document.getElementById('save-layers-confirm');c.style.display='block';setTimeout(()=>c.style.display='none',2500);
-    renderTwoWeek();renderBacklog();
-  }catch(e){alert('Save failed: '+e.message);}
-}
-
 function openJob(id){
-  const job=allJobs.find(j=>j.id===id);if(!job)return;
+  const job=allJobs.find(j=>j.id===id); if(!job)return;
   activeJobId=id;
-  const nm=getMat(job.newRoofMaterialId),em=getMat(job.existingRoofMaterialId);
-  const bg=nm?nm.colorBg:'#f0f0ec',text=nm?nm.colorText:'#888',border=nm?nm.colorBorder:'#ccc';
+  const nm=getMat(job.newRoofMaterialId), em=getMat(job.existingRoofMaterialId);
+  const bg=nm?nm.colorBg:'#f0f0ec', text=nm?nm.colorText:'#888', border=nm?nm.colorBorder:'#ccc';
   document.getElementById('m-name').textContent=job.customer;
   document.getElementById('m-jobnum').textContent='Job '+job.jobNum;
   let badges=nm?`<span class="modal-badge" style="background:${bg};color:${text};border:1px solid ${border}">${nm.name}</span>`:'';
   if(job.steepPitch) badges+=`<span class="modal-badge" style="background:#FEF0E0;color:#A04000;border:1px solid #F0A500">⚠ STEEP 7:12+</span>`;
   if(job.isScheduled) badges+=`<span class="modal-badge" style="background:#DCF0CC;color:#27500A">Scheduled</span>`;
   else badges+=`<span class="modal-badge" style="background:#FDE6D8;color:#712B13">Backlog</span>`;
+  if(job.removalCrewIds&&job.removalCrewIds.length>1) badges+=`<span class="modal-badge" style="background:#E8E6FD;color:#3C3489;">×${job.removalCrewIds.length} crews</span>`;
   document.getElementById('m-badges').innerHTML=badges;
   const appr=rbApprovalInfo(job.startDateApproval);
   document.getElementById('m-approval').innerHTML=`<span class="approval-badge ${appr.fullCls}">${appr.label}</span>`;
   document.getElementById('m-rc').textContent=rcName(job.consultantId);
+  document.getElementById('m-crews').textContent=crewNames(job.removalCrewIds);
   document.getElementById('m-addr').textContent=job.address||'—';
   document.getElementById('m-tearoff').textContent=job.tearOffDate?rbFmtFull(job.tearoffDate):'Not yet scheduled';
   document.getElementById('m-install').textContent=rbFmtD(job.installDate);
-  document.getElementById('m-dur').textContent=job.duration||'—';
   document.getElementById('m-new-roof').textContent=nm?nm.name:'—';
   document.getElementById('m-existing-roof').textContent=em?em.name:'—';
   document.getElementById('m-deck').textContent=`${rbDeckLabel(job.existingDeckType)||'Unknown'} → ${rbDeckLabel(job.newDeckType)||'No change'}`;
@@ -440,13 +375,20 @@ function openJob(id){
   const gc=job.gutterInstruction==='remove'?'gutter-remove':job.gutterInstruction==='keep'?'gutter-keep':'gutter-na';
   document.getElementById('m-gutters').innerHTML=`<span class="gutter-badge ${gc}"><i class="ti ti-droplet" style="font-size:11px"></i> ${gi[job.gutterInstruction]||'N/A'}</span>`;
   document.getElementById('m-notes').textContent=job.notes||'—';
-  renderLayerStack(job);
+  // Layer stack — read only
+  const layers=job.layerStack&&job.layerStack.length?job.layerStack:[job.newRoofMaterialId||''];
+  document.getElementById('layer-stack').innerHTML=layers.map((matId,idx)=>{
+    const m=getMat(matId);
+    const pos=layers.length===1?'Only layer':idx===0?'Top layer':idx===layers.length-1?'Bottom layer':`Layer ${idx+1}`;
+    const arrow=idx>0?`<div class="layer-arrow"><i class="ti ti-arrow-down"></i></div>`:'';
+    return `${arrow}<div class="layer-row-item"><div class="layer-pos-lbl">${pos}</div><div style="font-size:13px;color:#222;padding:4px 0;">${m?m.name:'—'}</div></div>`;
+  }).join('');
   document.getElementById('modal-overlay').classList.add('open');
 }
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');activeJobId=null;}
-function handleOverlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
-function changeWeek(dir){weekOffset+=dir;renderTwoWeek();}
-function selectCrew(id){activeCrew=id;renderCrewTabs();renderTwoWeek();renderBacklog();}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); activeJobId=null; }
+function handleOverlayClick(e){ if(e.target===document.getElementById('modal-overlay'))closeModal(); }
+function changeWeek(dir){ weekOffset+=dir; renderTwoWeek(); }
+function selectCrew(id){ activeCrew=id; renderCrewTabs(); renderTwoWeek(); renderBacklog(); }
 
 loadAll();
 </script>
