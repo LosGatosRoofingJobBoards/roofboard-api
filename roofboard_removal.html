@@ -171,7 +171,21 @@ const TODAY=new Date();
 let weekOffset=0, activeCrew='all', activeJobId=null;
 let allJobs=[], consultants=[], roofMaterials=[], removalCrews=[];
 
+const CACHE_KEY='rb_removal_cache';
+
 async function apiFetch(path){ const r=await fetch(RB_API+path); if(!r.ok)throw new Error('API '+r.status); return r.json(); }
+
+function saveCache(){ try{ localStorage.setItem(CACHE_KEY,JSON.stringify({jobs:allJobs,consultants,roofMaterials,removalCrews,savedAt:new Date().toISOString()})); }catch(e){} }
+function loadCache(){ try{ const c=localStorage.getItem(CACHE_KEY); return c?JSON.parse(c):null; }catch(e){ return null; } }
+function showBanner(savedAt){
+  let el=document.getElementById('offline-banner');
+  if(!el){ el=document.createElement('div'); el.id='offline-banner'; el.style.cssText='background:#F0A500;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:7px 14px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;'; document.querySelector('.main-layout').before(el); }
+  const t=savedAt?new Date(savedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'unknown time';
+  el.innerHTML=`<i class="ti ti-wifi-off" style="font-size:14px"></i> Server unreachable — showing last saved schedule from ${t}. Retrying automatically…`;
+}
+function hideBanner(){ const el=document.getElementById('offline-banner'); if(el) el.remove(); }
+
+function parseJobs(jobs){ return (jobs||[]).map(j=>({...j,tearOffDate:j.tearoffDate?new Date(j.tearoffDate+'T00:00:00'):null,installDateObj:j.installDate?new Date(j.installDate+'T00:00:00'):null,isScheduled:!!j.tearoffDate})); }
 
 async function loadAll(){
   try {
@@ -185,20 +199,28 @@ async function loadAll(){
     consultants.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
     renderCrewTabs();
     await loadJobs();
-  } catch(e){ console.error(e); }
+  } catch(e){
+    console.error(e);
+    const cache=loadCache();
+    if(cache){
+      consultants=cache.consultants||[]; roofMaterials=cache.roofMaterials||[]; removalCrews=cache.removalCrews||[];
+      allJobs=parseJobs(cache.jobs);
+      const sel=document.getElementById('rc-filter'); sel.innerHTML='<option value="">All Consultants</option>'; consultants.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o);});
+      renderCrewTabs(); renderTwoWeek(); renderBacklog(); renderLegend(); showBanner(cache.savedAt);
+    }
+  }
 }
 
 async function loadJobs(){
   try {
-    allJobs=await apiFetch('/api/jobs');
-    allJobs=allJobs.map(j=>({
-      ...j,
-      tearOffDate:j.tearoffDate?new Date(j.tearoffDate+'T00:00:00'):null,
-      installDateObj:j.installDate?new Date(j.installDate+'T00:00:00'):null,
-      isScheduled:!!j.tearoffDate,
-    }));
-    renderTwoWeek(); renderBacklog(); renderLegend();
-  } catch(e){ console.error(e); }
+    const raw=await apiFetch('/api/jobs');
+    allJobs=parseJobs(raw);
+    saveCache(); hideBanner(); renderTwoWeek(); renderBacklog(); renderLegend();
+  } catch(e){
+    console.error(e);
+    const cache=loadCache();
+    if(cache){ allJobs=parseJobs(cache.jobs); showBanner(cache.savedAt); renderTwoWeek(); renderBacklog(); }
+  }
 }
 setInterval(loadJobs,30000);
 
