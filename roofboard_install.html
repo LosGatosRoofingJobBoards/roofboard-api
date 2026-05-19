@@ -82,16 +82,11 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .add-insp-btn:disabled { opacity: 0.4; cursor: default; }
 .insp-rows { display: flex; flex-direction: column; gap: 5px; }
 .insp-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 5px; align-items: center; background: #f8f8f5; border-radius: 7px; padding: 7px 9px; }
-.insp-select, .insp-date { font-size: 12px; font-family: inherit; border: 0.5px solid #d0d0cc; border-radius: 5px; padding: 5px 7px; background: #fff; color: #222; width: 100%; }
-.insp-delete { background: none; border: none; color: #ccc; cursor: pointer; font-size: 15px; padding: 2px; border-radius: 3px; }
-.insp-delete:hover { color: #E24B4A; }
 .insp-tearoff    { background: #FDE6D8; color: #712B13; }
 .insp-nailing    { background: #E8E6FD; color: #3C3489; }
 .insp-inprogress { background: #FAEEDA; color: #633806; }
 .insp-final      { background: #DCF0CC; color: #27500A; }
 .no-insp-msg { font-size: 12px; color: #bbb; font-style: italic; }
-.save-insp-btn { margin-top: 8px; width: 100%; padding: 8px; border-radius: 7px; background: #185FA5; color: #fff; font-size: 12px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; }
-.save-confirm { font-size: 11px; color: #1D9E75; font-weight: 600; text-align: center; margin-top: 5px; display: none; }
 .warranty-section { margin-top: 12px; padding-top: 12px; border-top: 1.5px solid #f0f0ec; }
 .warranty-row { display: flex; align-items: center; justify-content: space-between; }
 .warranty-title { font-size: 11px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
@@ -162,12 +157,9 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="insp-section">
       <div class="insp-header">
         <div class="insp-title"><i class="ti ti-clipboard-check"></i> Inspections</div>
-        <button class="add-insp-btn" id="add-insp-btn" onclick="addInspRow()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
       </div>
-      <div class="insp-rows" id="insp-rows"></div>
-      <div class="no-insp-msg" id="no-insp-msg" style="display:none">No inspections yet.</div>
-      <button class="save-insp-btn" id="save-insp-btn" onclick="saveInsps()" style="display:none"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i> Save</button>
-      <div class="save-confirm" id="save-confirm">✓ Saved</div>
+      <div id="insp-display"></div>
+      <div class="no-insp-msg" id="no-insp-msg" style="display:none">No inspections scheduled.</div>
     </div>
     <div class="warranty-section" id="m-warranty-section">
       <div class="warranty-row">
@@ -316,7 +308,7 @@ async function openJob(id){
   if(job.includesGutters){gs.style.display='block';document.getElementById('m-gutter-mat').textContent=job.gutterMaterials||'—';}
   else gs.style.display='none';
   try{modalInsps=await apiFetch(`/api/jobs/${id}/inspections`);}catch{modalInsps=[];}
-  renderInspRows();
+  renderInspDisplay();
   const isReroof=nm&&!['Gutters Only','Repairs'].includes(nm.name);
   document.getElementById('m-warranty-section').style.display=isReroof?'block':'none';
   if(isReroof){
@@ -340,32 +332,21 @@ async function toggleWarranty(checked){
   document.getElementById('m-warranty-badge').style.display=checked?'inline-flex':'none';
   try{await apiPost('PATCH',`/api/jobs/${activeJobId}`,{warranty:checked});}catch(e){console.error(e);}
 }
-function renderInspRows(){
-  const rowsEl=document.getElementById('insp-rows'),noMsg=document.getElementById('no-insp-msg'),saveBtn=document.getElementById('save-insp-btn'),addBtn=document.getElementById('add-insp-btn');
-  document.getElementById('save-confirm').style.display='none';
-  if(!modalInsps.length){rowsEl.innerHTML='';noMsg.style.display='block';saveBtn.style.display='none';}
-  else{
-    noMsg.style.display='none';saveBtn.style.display='block';
-    rowsEl.innerHTML=modalInsps.map((insp,idx)=>{
-      const opts=INSP_TYPES.map(t=>`<option value="${t.value}"${t.value===insp.type?' selected':''}>${t.label}</option>`).join('');
-      return `<div class="insp-row">
-        <select class="insp-select" onchange="modalInsps[${idx}].type=this.value">${opts}</select>
-        <input class="insp-date" type="date" value="${insp.date||''}" onchange="modalInsps[${idx}].date=this.value">
-        <button class="insp-delete" onclick="delInspRow(${idx})"><i class="ti ti-trash" style="font-size:13px"></i></button>
+function renderInspDisplay(){
+  const display=document.getElementById('insp-display');
+  const noMsg=document.getElementById('no-insp-msg');
+  if(!modalInsps.length){
+    display.innerHTML=''; noMsg.style.display='block';
+  } else {
+    noMsg.style.display='none';
+    display.innerHTML=modalInsps.map(insp=>{
+      const t=INSP_TYPES.find(x=>x.value===insp.type)||INSP_TYPES[0];
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0f0ec;">
+        <span class="${t.cls}" style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:8px;">${t.label}</span>
+        <span style="font-size:12px;color:#555;">${insp.date?rbFmtD(insp.date):'No date set'}</span>
       </div>`;
     }).join('');
   }
-  addBtn.disabled=modalInsps.length>=4;
-}
-function addInspRow(){if(!activeJobId||modalInsps.length>=4)return;modalInsps.push({type:'tearoff',date:''});renderInspRows();}
-function delInspRow(i){modalInsps.splice(i,1);renderInspRows();}
-async function saveInsps(){
-  if(!activeJobId)return;
-  try{
-    await apiPost('PUT',`/api/jobs/${activeJobId}/inspections`,modalInsps);
-    const job=allJobs.find(j=>j.id===activeJobId);if(job)job._hasInsps=modalInsps.length>0;
-    const c=document.getElementById('save-confirm');c.style.display='block';setTimeout(()=>c.style.display='none',2500);
-  }catch(e){alert('Save failed: '+e.message);}
 }
 function changeMonth(dir){viewMonth+=dir;if(viewMonth>11){viewMonth=0;viewYear++;}if(viewMonth<0){viewMonth=11;viewYear--;}renderCalendar();}
 function selectCrew(id){activeCrew=id;renderCrewTabs();renderCalendar();}
