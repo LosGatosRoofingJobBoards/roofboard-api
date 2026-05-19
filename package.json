@@ -1,7 +1,7 @@
 {
   "name": "roofboard-api",
-  "version": "3.0.0",
-  "description": "RoofBoard scheduling API with authentication",
+  "version": "5.0.0",
+  "description": "RoofBoard scheduling API",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "dependencies": {
