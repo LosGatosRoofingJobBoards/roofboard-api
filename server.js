@@ -476,10 +476,8 @@ app.get('/api/jobs',(req,res)=>{
     } else if(view==='gutters'){
       sql+=' AND gutterDate IS NOT NULL AND gutterDate != \'\'';
       sql+=' AND gutterCrewId IS NOT NULL AND gutterCrewId != \'\' AND gutterCrewId != \'[]\'';
-    } else if(view==='removal'){
-      sql+=' AND tearoffDate IS NOT NULL AND tearoffDate != \'\'';
-      sql+=' AND removalCrewId IS NOT NULL AND removalCrewId != \'\' AND removalCrewId != \'[]\'';
     }
+    // Note: removal board fetches ALL jobs (no filter) so it can show both scheduled and backlog
     sql+=' ORDER BY jobNum ASC';
     let jobs = db.prepare(sql).all(...params).map(parseJob);
     // Post-filter by crewId if specified (crew is now an array)
