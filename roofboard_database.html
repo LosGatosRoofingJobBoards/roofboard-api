@@ -94,9 +94,6 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
 .crew-select-row { display: flex; gap: 5px; align-items: center; }
 .crew-select-row select { flex: 1; font-size: 12px; padding: 6px 8px; border: 0.5px solid #d0d0cc; border-radius: 6px; font-family: inherit; background: #fff; color: #111; outline: none; }
 .crew-select-row select:disabled { background: #f8f8f5; color: #bbb; }
-.crew-add-btn { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid #d0d0cc; background: #EAF2FB; color: #185FA5; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; flex-shrink: 0; font-family: inherit; }
-.crew-add-btn:hover { background: #d0e8f8; }
-.crew-add-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .crew-tags { display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; }
 .crew-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: #DEEDFB; color: #0C447C; }
 .crew-tag .remove-crew { cursor: pointer; font-size: 13px; line-height: 1; opacity: 0.6; background: none; border: none; color: inherit; padding: 0; font-family: inherit; }
@@ -421,8 +418,7 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
             <div class="crew-selector" id="removal-crew-selector">
               <div class="crew-tags" id="removal-crew-tags"></div>
               <div class="crew-select-row">
-                <select id="removal-crew-select"><option value="">Add crew…</option></select>
-                <button class="crew-add-btn" onclick="addCrew('removal')" title="Add">+</button>
+                <select id="removal-crew-select" onchange="addCrewOnChange('removal')"><option value="">— Select crew —</option></select>
               </div>
             </div>
           </div>
@@ -439,8 +435,7 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
             <div class="crew-selector" id="install-crew-selector">
               <div class="crew-tags" id="install-crew-tags"></div>
               <div class="crew-select-row">
-                <select id="install-crew-select"><option value="">Add crew…</option></select>
-                <button class="crew-add-btn" onclick="addCrew('install')" title="Add">+</button>
+                <select id="install-crew-select" onchange="addCrewOnChange('install')"><option value="">— Select crew —</option></select>
               </div>
             </div>
           </div>
@@ -456,8 +451,7 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
             <div class="crew-selector" id="gutter-crew-selector">
               <div class="crew-tags" id="gutter-crew-tags"></div>
               <div class="crew-select-row">
-                <select id="gutter-crew-select"><option value="">Add crew…</option></select>
-                <button class="crew-add-btn" onclick="addCrew('gutter')" title="Add">+</button>
+                <select id="gutter-crew-select" onchange="addCrewOnChange('gutter')"><option value="">— Select crew —</option></select>
               </div>
             </div>
           </div>
@@ -673,9 +667,9 @@ function renderTable(){
   document.getElementById('nodata').style.display=page.length?'none':'block';
   document.getElementById('tbody').innerHTML=page.map(j=>{
     const notApproved=j.startDateApproval==='not_approved';
+    const onRemoval=!!(j.tearoffDate);
     const onInstall=!!(j.installDate&&j.installCrewIds&&j.installCrewIds.length);
-    const onGutter=!!j.gutterDate;
-    const onRemoval=!!j.tearoffDate;
+    const onGutter=!!(j.gutterDate&&j.gutterCrewIds&&j.gutterCrewIds.length);
     const boards=`<div class="board-dots">
       <div class="board-dot" style="background:${onRemoval?'#D85A30':'#e0e0e0'}" title="Removal"></div>
       <div class="board-dot" style="background:${onInstall?'#185FA5':'#e0e0e0'}" title="Install"></div>
@@ -734,6 +728,10 @@ function addCrew(type){
   const ids=type==='removal'?formRemovalCrewIds:type==='install'?formInstallCrewIds:formGutterCrewIds;
   if(!ids.includes(id)){ ids.push(id); renderCrewTags(type); }
   sel.value='';
+}
+function addCrewOnChange(type){
+  // Auto-add when selection changes — no need to click +
+  addCrew(type);
 }
 function removeCrew(type,id){
   if(type==='removal') formRemovalCrewIds=formRemovalCrewIds.filter(x=>x!==id);
@@ -907,6 +905,13 @@ async function saveJob(){
     data.gutterDate=document.getElementById('f-gutter').value||null;
   }
   if(canCrews){
+    // Also capture any crew currently selected in the dropdown but not yet added
+    const removalSel=document.getElementById('removal-crew-select');
+    const installSel=document.getElementById('install-crew-select');
+    const gutterSel=document.getElementById('gutter-crew-select');
+    if(removalSel&&removalSel.value&&!formRemovalCrewIds.includes(removalSel.value)) formRemovalCrewIds.push(removalSel.value);
+    if(installSel&&installSel.value&&!formInstallCrewIds.includes(installSel.value)) formInstallCrewIds.push(installSel.value);
+    if(gutterSel&&gutterSel.value&&!formGutterCrewIds.includes(gutterSel.value)) formGutterCrewIds.push(gutterSel.value);
     data.removalCrewIds=formRemovalCrewIds;
     data.installCrewIds=formInstallCrewIds;
     data.gutterCrewIds=formGutterCrewIds;
