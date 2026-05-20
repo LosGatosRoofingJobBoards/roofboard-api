@@ -721,9 +721,6 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
           imported.consultants++;
         });
       }
-          imported.consultants++;
-        });
-      }
 
       // Jobs
       if(Array.isArray(jobs)){
