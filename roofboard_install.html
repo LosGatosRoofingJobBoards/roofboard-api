@@ -149,7 +149,6 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     </div>
     <div class="warranty-section" id="m-warranty-section" style="display:none;">
       <div class="warranty-title"><i class="ti ti-rosette"></i> Extended Warranty</div>
-      <div id="m-warranty-desc" style="font-size:11px;color:#888;margin-top:2px;"></div>
       <div class="warranty-badge" id="m-warranty-badge" style="display:none;margin-top:6px;"><i class="ti ti-circle-check" style="font-size:11px"></i> Extended warranty included</div>
     </div>
   </div>
@@ -340,9 +339,6 @@ async function openJob(id){
   ws.style.display=isReroof?'block':'none';
   if(isReroof){
     document.getElementById('m-warranty-badge').style.display=job.warranty?'inline-flex':'none';
-    const mat=job.materials||''; let mfr='GAF';
-    if(mat.includes('Owens'))mfr='Owens Corning'; else if(mat.includes('CertainTeed'))mfr='CertainTeed'; else if(mat.includes('Boral'))mfr='Boral';
-    document.getElementById('m-warranty-desc').textContent=mfr+' extended warranty program';
   }
   document.getElementById('modal-overlay').classList.add('open');
 }
