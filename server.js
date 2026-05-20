@@ -685,19 +685,15 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
     let imported={jobs:0,inspections:0,crews:0,consultants:0,roofMaterials:0};
 
     db.transaction(()=>{
-      // Roof materials
+      // Roof materials — use INSERT OR REPLACE to handle unique name constraint
       if(Array.isArray(roofMaterials)){
         roofMaterials.forEach(m=>{
-          const ex=db.prepare('SELECT id FROM roof_materials WHERE id=?').get(m.id);
-          if(ex){
-            db.prepare('UPDATE roof_materials SET name=?,colorBg=?,colorText=?,colorBorder=?,active=?,sortOrder=? WHERE id=?').run(
-              m.name,m.colorBg,m.colorText,m.colorBorder,m.active?1:0,m.sortOrder||0,m.id
-            );
-          } else {
-            db.prepare('INSERT INTO roof_materials (id,name,colorBg,colorText,colorBorder,active,sortOrder,createdAt) VALUES (?,?,?,?,?,?,?,?)').run(
-              m.id,m.name,m.colorBg||'#f0f0ec',m.colorText||'#444',m.colorBorder||'#ccc',m.active?1:0,m.sortOrder||0,m.createdAt||now()
-            );
-          }
+          db.prepare(`INSERT OR REPLACE INTO roof_materials
+            (id,name,colorBg,colorText,colorBorder,active,sortOrder,createdAt)
+            VALUES (?,?,?,?,?,?,?,?)`).run(
+            m.id,m.name,m.colorBg||'#f0f0ec',m.colorText||'#444',m.colorBorder||'#ccc',
+            m.active?1:0,m.sortOrder||0,m.createdAt||now()
+          );
           imported.roofMaterials++;
         });
       }
@@ -705,14 +701,11 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
       // Crews
       if(Array.isArray(crews)){
         crews.forEach(c=>{
-          const ex=db.prepare('SELECT id FROM crews WHERE id=?').get(c.id);
-          if(ex){
-            db.prepare('UPDATE crews SET name=?,type=?,active=?,sortOrder=? WHERE id=?').run(c.name,c.type,c.active?1:0,c.sortOrder||0,c.id);
-          } else {
-            db.prepare('INSERT INTO crews (id,name,type,active,sortOrder,createdAt) VALUES (?,?,?,?,?,?)').run(
-              c.id,c.name,c.type,c.active?1:0,c.sortOrder||0,c.createdAt||now()
-            );
-          }
+          db.prepare(`INSERT OR REPLACE INTO crews
+            (id,name,type,active,sortOrder,createdAt)
+            VALUES (?,?,?,?,?,?)`).run(
+            c.id,c.name,c.type,c.active?1:0,c.sortOrder||0,c.createdAt||now()
+          );
           imported.crews++;
         });
       }
@@ -720,14 +713,14 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
       // Consultants
       if(Array.isArray(consultants)){
         consultants.forEach(c=>{
-          const ex=db.prepare('SELECT id FROM consultants WHERE id=?').get(c.id);
-          if(ex){
-            db.prepare('UPDATE consultants SET name=?,initials=?,active=? WHERE id=?').run(c.name,c.initials,c.active?1:0,c.id);
-          } else {
-            db.prepare('INSERT INTO consultants (id,name,initials,active,createdAt) VALUES (?,?,?,?,?)').run(
-              c.id,c.name,c.initials||'',c.active?1:0,c.createdAt||now()
-            );
-          }
+          db.prepare(`INSERT OR REPLACE INTO consultants
+            (id,name,initials,active,createdAt)
+            VALUES (?,?,?,?,?)`).run(
+            c.id,c.name,c.initials||'',c.active?1:0,c.createdAt||now()
+          );
+          imported.consultants++;
+        });
+      }
           imported.consultants++;
         });
       }
@@ -735,48 +728,30 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
       // Jobs
       if(Array.isArray(jobs)){
         jobs.forEach(j=>{
-          const ex=db.prepare('SELECT id FROM jobs WHERE id=?').get(j.id);
-          if(ex){
-            db.prepare(`UPDATE jobs SET
-              jobNum=?,customer=?,address=?,newRoofMaterialId=?,existingRoofMaterialId=?,
-              existingDeckType=?,newDeckType=?,existingRoofNotes=?,steepPitch=?,
-              removalCrewId=?,tearoffDate=?,installCrewId=?,installDate=?,gutterCrewId=?,gutterDate=?,
-              duration=?,gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
-              includesGutters=?,reroofComplete=?,warranty=?,layerStack=?,materials=?,notes=?,
-              startDateApproval=?,consultantId=?,backlogCategory=?,archived=?,completedAt=?,updatedAt=?
-              WHERE id=?`).run(
-              j.jobNum,j.customer,j.address||'',j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
-              j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',j.steepPitch?1:0,
-              j.removalCrewId||null,j.tearoffDate||null,j.installCrewId||null,j.installDate||null,
-              j.gutterCrewId||null,j.gutterDate||null,j.duration||'1 day',
-              j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
-              j.gutterInstruction||'na',j.gutterMaterials||'',
-              j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
-              JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
-              j.startDateApproval||'pending',j.consultantId||null,j.backlogCategory||'regular',
-              j.archived?1:0,j.completedAt||null,now(),j.id
-            );
-          } else {
-            db.prepare(`INSERT INTO jobs (
-              id,jobNum,customer,address,newRoofMaterialId,existingRoofMaterialId,
-              existingDeckType,newDeckType,existingRoofNotes,steepPitch,
-              removalCrewId,tearoffDate,installCrewId,installDate,gutterCrewId,gutterDate,
-              duration,gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
-              includesGutters,reroofComplete,warranty,layerStack,materials,notes,
-              startDateApproval,consultantId,backlogCategory,archived,completedAt,createdAt,updatedAt
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-              j.id,j.jobNum,j.customer,j.address||'',j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
-              j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',j.steepPitch?1:0,
-              j.removalCrewId||null,j.tearoffDate||null,j.installCrewId||null,j.installDate||null,
-              j.gutterCrewId||null,j.gutterDate||null,j.duration||'1 day',
-              j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
-              j.gutterInstruction||'na',j.gutterMaterials||'',
-              j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
-              JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
-              j.startDateApproval||'pending',j.consultantId||null,j.backlogCategory||'regular',
-              j.archived?1:0,j.completedAt||null,j.createdAt||now(),now()
-            );
-          }
+          // Jobs — use INSERT OR REPLACE to handle both new and existing
+          const removalCrewIds=JSON.stringify(Array.isArray(j.removalCrewIds)?j.removalCrewIds:(j.removalCrewId?[j.removalCrewId]:[]));
+          const installCrewIds=JSON.stringify(Array.isArray(j.installCrewIds)?j.installCrewIds:(j.installCrewId?[j.installCrewId]:[]));
+          const gutterCrewIds=JSON.stringify(Array.isArray(j.gutterCrewIds)?j.gutterCrewIds:(j.gutterCrewId?[j.gutterCrewId]:[]));
+          db.prepare(`INSERT OR REPLACE INTO jobs (
+            id,jobNum,customer,address,newRoofMaterialId,existingRoofMaterialId,
+            existingDeckType,newDeckType,existingRoofNotes,steepPitch,
+            removalCrewId,tearoffDate,installCrewId,installDate,gutterCrewId,gutterDate,
+            gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
+            includesGutters,reroofComplete,warranty,layerStack,materials,notes,
+            startDateApproval,consultantId,backlogCategory,archived,completedAt,createdAt,updatedAt
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+            j.id,j.jobNum,j.customer,j.address||'',j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
+            j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',j.steepPitch?1:0,
+            removalCrewIds,j.tearoffDate||null,
+            installCrewIds,j.installDate||null,
+            gutterCrewIds,j.gutterDate||null,
+            j.gutterProfile||null,j.gutterMaterial||null,j.gutterScreen||null,
+            j.gutterInstruction||'na',j.gutterMaterials||'',
+            j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
+            JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
+            j.startDateApproval||'pending',j.consultantId||null,j.backlogCategory||'regular',
+            j.archived?1:0,j.completedAt||null,j.createdAt||now(),now()
+          );
           imported.jobs++;
         });
       }
@@ -786,14 +761,10 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
         inspections.forEach(insp=>{
           const jobExists=db.prepare('SELECT id FROM jobs WHERE id=?').get(insp.jobId);
           if(!jobExists) return;
-          const ex=db.prepare('SELECT id FROM inspections WHERE id=?').get(insp.id);
-          if(ex){
-            db.prepare('UPDATE inspections SET type=?,date=?,sortOrder=? WHERE id=?').run(insp.type,insp.date||null,insp.sortOrder||0,insp.id);
-          } else {
-            db.prepare('INSERT INTO inspections (id,jobId,type,date,sortOrder) VALUES (?,?,?,?,?)').run(
-              insp.id,insp.jobId,insp.type||'tearoff',insp.date||null,insp.sortOrder||0
-            );
-          }
+          db.prepare(`INSERT OR REPLACE INTO inspections
+            (id,jobId,type,date,sortOrder) VALUES (?,?,?,?,?)`).run(
+            insp.id,insp.jobId,insp.type||'tearoff',insp.date||null,insp.sortOrder||0
+          );
           imported.inspections++;
         });
       }
