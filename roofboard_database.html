@@ -1176,7 +1176,7 @@ async function doImport(){
     const data=JSON.parse(await file.text());
     const r=await authFetch('POST','/api/import',data);const d=await r.json();
     if(!r.ok){resultEl.textContent='Restore failed: '+(d.error||'Unknown');resultEl.style.cssText='display:block;background:#FDE6D8;color:#712B13;';}
-    else{resultEl.textContent=`✓ Restored: ${d.imported.jobs} jobs, ${d.imported.crews} crews, ${d.imported.consultants} consultants, ${d.imported.roofMaterials} materials`;resultEl.style.cssText='display:block;background:#D5F0E8;color:#085041;';await loadRefData();await loadJobs();}
+    else{resultEl.textContent=`✓ Restored: ${d.imported.jobs} jobs, ${d.imported.crews} crews, ${d.imported.consultants} consultants, ${d.imported.roofMaterials} materials, ${d.imported.users||0} users`;resultEl.style.cssText='display:block;background:#D5F0E8;color:#085041;';await loadRefData();await loadJobs();}
   }catch(e){resultEl.textContent='Restore failed: '+(e.message||'Invalid file');resultEl.style.cssText='display:block;background:#FDE6D8;color:#712B13;';}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-upload"></i> Restore Data';
 }

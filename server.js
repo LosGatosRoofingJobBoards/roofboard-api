@@ -592,11 +592,11 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       if(bad.length>0) return res.status(403).json({error:'Roofing Consultant can only edit notes and approval'});
     }
 
-    // Office staff — no scheduling dates
+    // Office staff — strip scheduling dates rather than reject
     if(role==='office_staff'){
-      const restricted=['tearoffDate','installDate','gutterDate'];
-      const bad=Object.keys(body).filter(k=>restricted.includes(k));
-      if(bad.length>0) return res.status(403).json({error:'Office staff cannot edit scheduling dates'});
+      delete body.tearoffDate;
+      delete body.installDate;
+      delete body.gutterDate;
     }
 
     const existing=db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id);
@@ -698,6 +698,7 @@ app.get('/api/export',requireAuth,requireRole('admin','scheduler'),(req,res)=>{
       crews:        db.prepare('SELECT * FROM crews').all(),
       consultants:  db.prepare('SELECT * FROM consultants').all(),
       roofMaterials:db.prepare('SELECT * FROM roof_materials').all(),
+      users:        db.prepare('SELECT id,username,passwordHash,salt,role,fullName,active,mustChangePwd,createdAt FROM users').all(),
     };
     res.setHeader('Content-Type','application/json');
     res.setHeader('Content-Disposition',`attachment; filename="roofboard-backup-${new Date().toISOString().slice(0,10)}.json"`);
@@ -708,8 +709,8 @@ app.get('/api/export',requireAuth,requireRole('admin','scheduler'),(req,res)=>{
 // POST /api/import — restore from backup JSON (admin only)
 app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
   try {
-    const {jobs,inspections,crews,consultants,roofMaterials}=req.body;
-    let imported={jobs:0,inspections:0,crews:0,consultants:0,roofMaterials:0};
+    const {jobs,inspections,crews,consultants,roofMaterials,users}=req.body;
+    let imported={jobs:0,inspections:0,crews:0,consultants:0,roofMaterials:0,users:0};
 
     db.transaction(()=>{
       // Roof materials — use INSERT OR REPLACE to handle unique name constraint
@@ -790,6 +791,21 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
             insp.id,insp.jobId,insp.type||'tearoff',insp.date||null,insp.sortOrder||0
           );
           imported.inspections++;
+        });
+      }
+
+      // Users — restore with hashed passwords (never plain text)
+      if(Array.isArray(users)){
+        users.forEach(u=>{
+          if(!u.id||!u.username||!u.passwordHash||!u.salt) return;
+          db.prepare(`INSERT OR REPLACE INTO users
+            (id,username,passwordHash,salt,role,fullName,active,mustChangePwd,createdAt)
+            VALUES (?,?,?,?,?,?,?,?,?)`).run(
+            u.id,u.username,u.passwordHash,u.salt,
+            u.role||'office_staff',u.fullName||'',
+            u.active?1:0,u.mustChangePwd?1:0,u.createdAt||now()
+          );
+          imported.users++;
         });
       }
     })();
