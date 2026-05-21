@@ -829,7 +829,7 @@ function changeFormLayerCount(dir){
 // ── Add / Edit ────────────────────────────────────────────────
 function clearForm(){
   document.getElementById('eid').value='';
-  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat','f-existing-notes','f-squares','f-manufacturer','f-productname','f-color','f-installer-notes','f-tearoff-notes','f-gutter-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-num','f-cust','f-addr','f-mat','f-gscreen','f-gmat','f-existing-notes','f-squares','f-manufacturer','f-productname','f-color','f-installer-notes','f-tearoff-notes','f-gutter-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-backlog-cat').value='regular';
   document.getElementById('f-approval').value='pending';
   document.getElementById('f-gprofile').value='';
@@ -876,7 +876,6 @@ function openEdit(id){
   document.getElementById('f-backlog-cat').value=j.backlogCategory||'regular';
   document.getElementById('f-approval').value=j.startDateApproval||'pending';
   document.getElementById('f-mat').value=j.materials||'';
-  document.getElementById('f-notes').value=j.notes||'';
   document.getElementById('f-squares').value=j.squares||'';
   document.getElementById('f-manufacturer').value=j.manufacturer||'';
   document.getElementById('f-productname').value=j.productName||'';
@@ -938,7 +937,6 @@ async function saveJob(){
     gutterScreen:document.getElementById('f-gscreen').value.trim()||null,
     gutterMaterials:document.getElementById('f-gmat').value.trim(),
     materials:document.getElementById('f-mat').value.trim(),
-    notes:document.getElementById('f-notes')?.value?.trim()||'',
     squares:document.getElementById('f-squares').value.trim(),
     manufacturer:document.getElementById('f-manufacturer').value.trim(),
     productName:document.getElementById('f-productname').value.trim(),
