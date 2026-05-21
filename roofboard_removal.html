@@ -55,6 +55,7 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
 .tag-deck         { background: rgba(0,0,0,0.06); color: inherit; font-style: italic; }
 .tag-crew         { background: #FAE0E0; color: #791F1F; }
 .tag-multicrew    { background: #E8E6FD; color: #3C3489; font-weight: 900; }
+.tag-squares      { background: #D85A30; color: #fff; font-weight: 900; }
 .backlog-panel { background: #fff; border-radius: 10px; border: 0.5px solid #e0e0e0; padding: 12px; }
 .backlog-count { font-size: 10px; color: #888; background: #f0f0ec; padding: 2px 8px; border-radius: 8px; }
 .backlog-section-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px; padding: 6px 0 4px; border-bottom: 0.5px solid #f0f0ec; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
@@ -157,8 +158,9 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-field"><div class="modal-label"><i class="ti ti-layers" style="font-size:12px"></i> Deck (Existing → New)</div><div class="modal-value" id="m-deck"></div></div>
     <div class="modal-field" id="m-existing-notes-f" style="display:none;"><div class="modal-label">Existing Roof Notes</div><div class="modal-value" id="m-existing-notes"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-package" style="font-size:12px"></i> Materials</div><div class="modal-value" id="m-mat"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-ruler-2" style="font-size:12px"></i> Squares</div><div class="modal-value" id="m-squares"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-droplet" style="font-size:12px"></i> Gutters</div><div class="modal-value" id="m-gutters"></div></div>
-    <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Notes</div><div class="modal-value" id="m-notes"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Tear-off Notes</div><div class="modal-value" id="m-notes"></div></div>
     <div class="layers-section">
       <div class="layers-title"><i class="ti ti-stack-2"></i> Roof Layers</div>
       <div id="layer-stack"></div>
@@ -282,6 +284,7 @@ function renderTwoWeek(){
           <div class="jc-r2">
             ${j.steepPitch?'<span class="ptag tag-steep">⚠STEEP</span>':''}
             ${isMultiCrew?`<span class="ptag tag-multicrew">×${j.removalCrewIds.length}crews</span>`:''}
+            ${j.squares?`<span class="ptag tag-squares">${j.squares}sq</span>`:''}
             <span class="ptag ${appr.cls}">${appr.label}</span>
             ${em?`<span class="ptag tag-existing">Rem:${em.name}</span>`:''}
             ${j.existingDeckType?`<span class="ptag tag-deck">${rbDeckLabel(j.existingDeckType)}</span>`:''}
@@ -336,6 +339,7 @@ function renderBacklog(){
       <div class="bi-r3">
         ${j.steepPitch?'<span class="ptag tag-steep">⚠STEEP</span>':''}
         ${isMultiCrew?`<span class="ptag tag-multicrew">×${j.removalCrewIds.length}crews</span>`:''}
+        ${j.squares?`<span class="ptag tag-squares">${j.squares}sq</span>`:''}
         <span class="ptag ${appr.cls}">${appr.label}</span>
         ${em?`<span class="ptag tag-existing">Rem:${em.name}</span>`:''}
         ${rc?`<span class="ptag tag-rc">${rc}</span>`:''}
@@ -393,10 +397,11 @@ function openJob(id){
   if(job.existingRoofNotes){enf.style.display='block';document.getElementById('m-existing-notes').textContent=job.existingRoofNotes;}
   else enf.style.display='none';
   document.getElementById('m-mat').textContent=job.materials||'—';
+  document.getElementById('m-squares').textContent=job.squares?job.squares+'sq':'—';
   const gi={na:'N/A',remove:'Remove gutters',keep:'Keep gutters'};
   const gc=job.gutterInstruction==='remove'?'gutter-remove':job.gutterInstruction==='keep'?'gutter-keep':'gutter-na';
   document.getElementById('m-gutters').innerHTML=`<span class="gutter-badge ${gc}"><i class="ti ti-droplet" style="font-size:11px"></i> ${gi[job.gutterInstruction]||'N/A'}</span>`;
-  document.getElementById('m-notes').textContent=job.notes||'—';
+  document.getElementById('m-notes').textContent=job.tearoffNotes||job.notes||'—';
   // Layer stack — read only
   const layers=job.layerStack&&job.layerStack.length?job.layerStack:[job.newRoofMaterialId||''];
   document.getElementById('layer-stack').innerHTML=layers.map((matId,idx)=>{

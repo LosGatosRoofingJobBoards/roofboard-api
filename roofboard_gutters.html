@@ -126,7 +126,7 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-field"><div class="modal-label"><i class="ti ti-calendar" style="font-size:12px"></i> Gutter Date</div><div class="modal-value" id="m-gutter-date"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home" style="font-size:12px"></i> New Roof</div><div class="modal-value" id="m-new-roof"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-home-off" style="font-size:12px"></i> Existing Roof</div><div class="modal-value" id="m-existing-roof"></div></div>
-    <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Notes</div><div class="modal-value" id="m-notes"></div></div>
+    <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Gutter Notes</div><div class="modal-value" id="m-notes"></div></div>
     <div class="gutter-section">
       <div class="gutter-section-title"><i class="ti ti-droplet" style="font-size:11px"></i> Gutter Details</div>
       <div class="modal-field" style="margin-bottom:6px;"><div class="modal-label">Profile</div><div class="modal-value" id="m-gprofile"></div></div>
@@ -319,7 +319,7 @@ function openJob(id){
   document.getElementById('m-gutter-date').textContent=rbFmtFull(job.gutterDate);
   document.getElementById('m-new-roof').textContent=nm?nm.name:'—';
   document.getElementById('m-existing-roof').textContent=em?em.name:'—';
-  document.getElementById('m-notes').textContent=job.notes||'—';
+  document.getElementById('m-notes').textContent=job.gutterNotes||job.notes||'—';
   document.getElementById('m-gprofile').textContent=gp?gp.label:'—';
   document.getElementById('m-gmaterial').textContent=gm?gm.label:'—';
   const gsf=document.getElementById('m-gscreen-f');

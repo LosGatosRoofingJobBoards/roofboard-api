@@ -60,7 +60,8 @@ function sanitize(val) {
 }
 function sanitizeJob(j) {
   const fields = ['jobNum','customer','address','materials','gutterMaterials',
-    'notes','gutterScreen','existingRoofNotes'];
+    'notes','gutterScreen','existingRoofNotes','squares','manufacturer',
+    'productName','color','installerNotes','tearoffNotes','gutterNotes'];
   const out = {...j};
   fields.forEach(f => { if(out[f]) out[f] = sanitize(out[f]); });
   return out;
@@ -233,7 +234,27 @@ function parseJob(row){
   };
 }
 
-// ── Migration: convert legacy single-crew strings to JSON arrays ──
+// ── Migration: add new fields (safe to run multiple times) ───
+const newCols = [
+  ['squares',        'TEXT DEFAULT \'\''],
+  ['manufacturer',   'TEXT DEFAULT \'\''],
+  ['productName',    'TEXT DEFAULT \'\''],
+  ['color',          'TEXT DEFAULT \'\''],
+  ['installerNotes', 'TEXT DEFAULT \'\''],
+  ['tearoffNotes',   'TEXT DEFAULT \'\''],
+  ['gutterNotes',    'TEXT DEFAULT \'\''],
+];
+newCols.forEach(([col, def]) => {
+  try { db.exec(`ALTER TABLE jobs ADD COLUMN ${col} ${def}`); } catch(e) {}
+});
+
+// Migrate existing notes → installerNotes (only where installerNotes is empty)
+try {
+  db.exec(`UPDATE jobs SET installerNotes = notes WHERE notes != '' AND (installerNotes IS NULL OR installerNotes = '')`);
+  console.log('Notes migration complete');
+} catch(e) { console.error('Notes migration error:', e.message); }
+
+
 try {
   const jobs = db.prepare('SELECT id, removalCrewId, installCrewId, gutterCrewId FROM jobs').all();
   const update = db.prepare('UPDATE jobs SET removalCrewId=?, installCrewId=?, gutterCrewId=? WHERE id=?');
@@ -526,8 +547,9 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
       removalCrewId,tearoffDate,installCrewId,installDate,gutterCrewId,gutterDate,
       gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
       includesGutters,reroofComplete,warranty,layerStack,materials,notes,
+      squares,manufacturer,productName,color,installerNotes,tearoffNotes,gutterNotes,
       startDateApproval,consultantId,backlogCategory,archived,createdAt,updatedAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
       id,j.jobNum,j.customer,j.address||'',
       j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
       j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
@@ -539,6 +561,8 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
       JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
+      j.squares||'',j.manufacturer||'',j.productName||'',j.color||'',
+      j.installerNotes||'',j.tearoffNotes||'',j.gutterNotes||'',
       j.startDateApproval||'pending',j.consultantId||null,
       j.backlogCategory||'regular',ts,ts
     );
@@ -561,9 +585,9 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       if(bad.length>0) return res.status(403).json({error:'Removal foreman can only assign removal crew'});
     }
 
-    // Sales / RC — only notes, approval, consultantId
+    // Sales / RC — only notes, installerNotes, approval, consultantId
     if(role==='sales'){
-      const allowed=['notes','startDateApproval','consultantId'];
+      const allowed=['notes','installerNotes','startDateApproval','consultantId'];
       const bad=Object.keys(body).filter(k=>!allowed.includes(k));
       if(bad.length>0) return res.status(403).json({error:'Roofing Consultant can only edit notes and approval'});
     }
@@ -588,6 +612,7 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       removalCrewId=?,tearoffDate=?,installCrewId=?,installDate=?,gutterCrewId=?,gutterDate=?,
       gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
       includesGutters=?,reroofComplete=?,warranty=?,layerStack=?,materials=?,notes=?,
+      squares=?,manufacturer=?,productName=?,color=?,installerNotes=?,tearoffNotes=?,gutterNotes=?,
       startDateApproval=?,consultantId=?,backlogCategory=?,updatedAt=?
     WHERE id=?`).run(
       j.jobNum,j.customer,j.address||'',
@@ -601,6 +626,8 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       j.gutterInstruction||'na',j.gutterMaterials||'',
       j.includesGutters?1:0,j.reroofComplete?1:0,j.warranty?1:0,
       JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
+      j.squares||'',j.manufacturer||'',j.productName||'',j.color||'',
+      j.installerNotes||'',j.tearoffNotes||'',j.gutterNotes||'',
       j.startDateApproval||'pending',j.consultantId||null,
       j.backlogCategory||'regular',now(),req.params.id
     );

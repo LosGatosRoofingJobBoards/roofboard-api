@@ -367,9 +367,43 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
         <div id="layer-rows-form"></div>
       </div>
 
-      <div class="sec-div sec-gray"><i class="ti ti-file-text" style="font-size:11px"></i> Materials &amp; Notes</div>
-      <div class="form-group full"><label class="lbl">Roofing Materials</label><textarea class="fi" id="f-mat" placeholder="30sq GAF Timberline HDZ…"></textarea></div>
-      <div class="form-group full"><label class="lbl">Notes</label><textarea class="fi" id="f-notes" placeholder="Gate code: 4821…"></textarea></div>
+      <div class="sec-div sec-gray"><i class="ti ti-file-text" style="font-size:11px"></i> Product Details</div>
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="lbl">Manufacturer</label>
+          <input type="text" class="fi" id="f-manufacturer" placeholder="e.g. Owens Corning">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Product Name</label>
+          <input type="text" class="fi" id="f-productname" placeholder="e.g. Duration">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Color</label>
+          <input type="text" class="fi" id="f-color" placeholder="e.g. Pewter Gray">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="lbl">Squares</label>
+          <input type="text" class="fi" id="f-squares" placeholder="e.g. 28.5">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Roofing Materials</label>
+          <input type="text" class="fi" id="f-mat" placeholder="Underlayment, ice shield, etc.">
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Installer Notes</label>
+        <textarea class="fi" id="f-installer-notes" placeholder="Gate code, access instructions, steep areas…"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Tear-off Notes</label>
+        <textarea class="fi" id="f-tearoff-notes" placeholder="Layer count, disposal instructions, access notes…"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="lbl">Gutter Notes</label>
+        <textarea class="fi" id="f-gutter-notes" placeholder="Gutter-specific instructions…"></textarea>
+      </div>
 
       <div class="sec-div sec-green"><i class="ti ti-droplet" style="font-size:11px"></i> Gutter Details</div>
       <div class="form-row cols3">
@@ -503,8 +537,12 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
       <div class="d-field"><div class="d-lbl">Existing deck</div><div class="d-val" id="d-existing-deck"></div></div>
       <div class="d-field" id="d-existing-notes-field" style="display:none;"><div class="d-lbl">Existing roof notes</div><div class="d-val" id="d-existing-notes"></div></div>
       <div class="d-field"><div class="d-lbl">Roof layers</div><div class="d-val" id="d-layers"></div></div>
+      <div class="d-field"><div class="d-lbl">Product</div><div class="d-val" id="d-product"></div></div>
+      <div class="d-field"><div class="d-lbl">Squares</div><div class="d-val" id="d-squares"></div></div>
       <div class="d-field"><div class="d-lbl">Materials</div><div class="d-val" id="d-mat"></div></div>
-      <div class="d-field"><div class="d-lbl">Notes</div><div class="d-val" id="d-notes"></div></div>
+      <div class="d-field"><div class="d-lbl">Installer Notes</div><div class="d-val" id="d-installer-notes"></div></div>
+      <div class="d-field"><div class="d-lbl">Tear-off Notes</div><div class="d-val" id="d-tearoff-notes"></div></div>
+      <div class="d-field"><div class="d-lbl">Gutter Notes</div><div class="d-val" id="d-gutter-notes"></div></div>
       <div class="d-sec">Gutter details</div>
       <div class="d-field"><div class="d-lbl">Profile &amp; material</div><div class="d-val" id="d-gprofile"></div></div>
       <div class="d-field" id="d-gscreen-f" style="display:none;"><div class="d-lbl">Screen</div><div class="d-val" id="d-gscreen"></div></div>
@@ -791,7 +829,7 @@ function changeFormLayerCount(dir){
 // ── Add / Edit ────────────────────────────────────────────────
 function clearForm(){
   document.getElementById('eid').value='';
-  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat','f-existing-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-num','f-cust','f-addr','f-mat','f-notes','f-gscreen','f-gmat','f-existing-notes','f-squares','f-manufacturer','f-productname','f-color','f-installer-notes','f-tearoff-notes','f-gutter-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-backlog-cat').value='regular';
   document.getElementById('f-approval').value='pending';
   document.getElementById('f-gprofile').value='';
@@ -839,6 +877,13 @@ function openEdit(id){
   document.getElementById('f-approval').value=j.startDateApproval||'pending';
   document.getElementById('f-mat').value=j.materials||'';
   document.getElementById('f-notes').value=j.notes||'';
+  document.getElementById('f-squares').value=j.squares||'';
+  document.getElementById('f-manufacturer').value=j.manufacturer||'';
+  document.getElementById('f-productname').value=j.productName||'';
+  document.getElementById('f-color').value=j.color||'';
+  document.getElementById('f-installer-notes').value=j.installerNotes||'';
+  document.getElementById('f-tearoff-notes').value=j.tearoffNotes||'';
+  document.getElementById('f-gutter-notes').value=j.gutterNotes||'';
   document.getElementById('f-gprofile').value=j.gutterProfile||'';
   document.getElementById('f-gmaterial').value=j.gutterMaterial||'';
   document.getElementById('f-ginstr').value=j.gutterInstruction||'na';
@@ -893,7 +938,14 @@ async function saveJob(){
     gutterScreen:document.getElementById('f-gscreen').value.trim()||null,
     gutterMaterials:document.getElementById('f-gmat').value.trim(),
     materials:document.getElementById('f-mat').value.trim(),
-    notes:document.getElementById('f-notes').value.trim(),
+    notes:document.getElementById('f-notes')?.value?.trim()||'',
+    squares:document.getElementById('f-squares').value.trim(),
+    manufacturer:document.getElementById('f-manufacturer').value.trim(),
+    productName:document.getElementById('f-productname').value.trim(),
+    color:document.getElementById('f-color').value.trim(),
+    installerNotes:document.getElementById('f-installer-notes').value.trim(),
+    tearoffNotes:document.getElementById('f-tearoff-notes').value.trim(),
+    gutterNotes:document.getElementById('f-gutter-notes').value.trim(),
     includesGutters:document.getElementById('f-incgutters').checked,
     warranty:document.getElementById('f-warranty').checked,
     reroofComplete:document.getElementById('f-rfcomplete').checked,
@@ -978,8 +1030,13 @@ async function openDrawer(id){
   if(j.existingRoofNotes){enf.style.display='flex';document.getElementById('d-existing-notes').textContent=j.existingRoofNotes;}
   else enf.style.display='none';
   document.getElementById('d-layers').textContent=layerSummary(j.layerStack);
+  const productParts=[j.manufacturer,j.productName,j.color].filter(Boolean);
+  document.getElementById('d-product').textContent=productParts.length?productParts.join(' '):'—';
+  document.getElementById('d-squares').textContent=j.squares?j.squares+'sq':'—';
   document.getElementById('d-mat').textContent=j.materials||'—';
-  document.getElementById('d-notes').textContent=j.notes||'—';
+  document.getElementById('d-installer-notes').textContent=j.installerNotes||j.notes||'—';
+  document.getElementById('d-tearoff-notes').textContent=j.tearoffNotes||'—';
+  document.getElementById('d-gutter-notes').textContent=j.gutterNotes||'—';
   const gp=GUTTER_PROFILES[j.gutterProfile], gm=GUTTER_MATERIALS_MAP[j.gutterMaterial];
   document.getElementById('d-gprofile').textContent=[gp?gp.label:'',gm?gm.label:''].filter(Boolean).join(' · ')||'—';
   const gsf=document.getElementById('d-gscreen-f');
@@ -1059,7 +1116,7 @@ async function deleteFromDrawer(){if(!did)return;await delJob(did);}
 async function saveSalesNotes(){
   if(!did)return;
   const notes=document.getElementById('sales-notes-input').value;
-  try{const r=await authFetch('PATCH',`/api/jobs/${did}`,{notes});if(!r.ok){const d=await r.json();alert(d.error||'Failed');return;}const j=jobs.find(x=>x.id===did);if(j)j.notes=notes;document.getElementById('d-notes').textContent=notes||'—';const c=document.getElementById('sales-notes-saved');c.style.display='block';setTimeout(()=>c.style.display='none',2500);await loadJobs();}
+  try{const r=await authFetch('PATCH',`/api/jobs/${did}`,{installerNotes:notes,notes});if(!r.ok){const d=await r.json();alert(d.error||'Failed');return;}const j=jobs.find(x=>x.id===did);if(j){j.notes=notes;j.installerNotes=notes;}document.getElementById('d-installer-notes').textContent=notes||'—';const c=document.getElementById('sales-notes-saved');c.style.display='block';setTimeout(()=>c.style.display='none',2500);await loadJobs();}
   catch(e){if(e.message!=='Unauth')alert('Failed');}
 }
 
