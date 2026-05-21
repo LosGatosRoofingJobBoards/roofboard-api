@@ -573,7 +573,8 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
 app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
   try {
     const role=req.user.role;
-    const body=req.body;
+    // Work on a copy so we don't mutate req.body
+    const body={...req.body};
 
     // Supplier — no edits
     if(role==='supplier') return res.status(403).json({error:'Permission denied'});
@@ -592,7 +593,7 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       if(bad.length>0) return res.status(403).json({error:'Roofing Consultant can only edit notes and approval'});
     }
 
-    // Office staff — strip scheduling dates rather than reject
+    // Office staff — strip scheduling dates so they are preserved from existing record
     if(role==='office_staff'){
       delete body.tearoffDate;
       delete body.installDate;
@@ -807,6 +808,9 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
           );
           imported.users++;
         });
+        // Clear all sessions so everyone must log in fresh after restore
+        // This prevents stale tokens from causing auth failures
+        db.prepare('DELETE FROM sessions').run();
       }
     })();
 
