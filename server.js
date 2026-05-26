@@ -247,6 +247,8 @@ const newCols = [
 newCols.forEach(([col, def]) => {
   try { db.exec(`ALTER TABLE jobs ADD COLUMN ${col} ${def}`); } catch(e) {}
 });
+// Add email to consultants
+try { db.exec(`ALTER TABLE consultants ADD COLUMN email TEXT DEFAULT ''`); } catch(e) {}
 
 // Migrate existing notes → installerNotes (only where installerNotes is empty)
 try {
@@ -271,7 +273,69 @@ try {
   console.log('Crew migration complete');
 } catch(e) { console.error('Crew migration error:', e.message); }
 
-// ── Auth middleware ───────────────────────────────────────────
+// ── Zapier webhook ────────────────────────────────────────────
+const ZAPIER_WEBHOOK_URL = process.env.ZAPIER_WEBHOOK_URL || '';
+
+function fireZapierTearoff(job, previousTearoffDate){
+  if(!ZAPIER_WEBHOOK_URL) return; // Not configured
+  if(!job.consultantId) return;   // No RC assigned
+
+  const newDate = job.tearoffDate || null;
+  const oldDate = previousTearoffDate || null;
+
+  // Determine event type
+  let eventType;
+  if(!oldDate && newDate)       eventType = 'scheduled';
+  else if(oldDate && !newDate)  eventType = 'withdrawn';
+  else if(oldDate && newDate && oldDate !== newDate) eventType = 'rescheduled';
+  else return; // No change to tearoff date — do nothing
+
+  // Get RC details
+  const consultant = db.prepare('SELECT * FROM consultants WHERE id=?').get(job.consultantId);
+  if(!consultant || !consultant.email) return; // No email on file
+
+  // Format date nicely
+  function fmtDate(d){
+    if(!d) return '';
+    const dt = new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  }
+
+  // Build subject line
+  const subjects = {
+    scheduled:   `Job Scheduled — ${job.jobNum} ${job.customer}`,
+    rescheduled: `Job Rescheduled — ${job.jobNum} ${job.customer}`,
+    withdrawn:   `Job Removed from Schedule — ${job.jobNum} ${job.customer}`,
+  };
+
+  // Build email body
+  const bodies = {
+    scheduled:   `Hi ${consultant.name},\n\nYour job has been scheduled for tear-off.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\nTear-off Date: ${fmtDate(newDate)}\n\n— Los Gatos Roofing`,
+    rescheduled: `Hi ${consultant.name},\n\nYour job's tear-off date has been updated.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\nNew Tear-off Date: ${fmtDate(newDate)}\n\n— Los Gatos Roofing`,
+    withdrawn:   `Hi ${consultant.name},\n\nYour job has been removed from the tear-off schedule.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\n\n— Los Gatos Roofing`,
+  };
+
+  const payload = {
+    eventType,
+    rcName:      consultant.name,
+    rcEmail:     consultant.email,
+    subject:     subjects[eventType],
+    body:        bodies[eventType],
+    jobNum:      job.jobNum,
+    customer:    job.customer,
+    address:     job.address,
+    tearoffDate: newDate ? fmtDate(newDate) : '',
+  };
+
+  // Fire and forget — don't block the response
+  fetch(ZAPIER_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(err => console.error('Zapier webhook failed:', err.message));
+}
+
+
 function requireAuth(req,res,next){
   const token=req.headers['authorization']?.replace('Bearer ','');
   if(!token) return res.status(401).json({error:'Not logged in'});
@@ -467,13 +531,29 @@ app.get('/api/consultants',(req,res)=>{
 app.post('/api/consultants',requireAuth,requireRole('admin','scheduler','office_staff'),(req,res)=>{
   try {
     const name=sanitize(req.body.name||'');
+    const email=sanitize(req.body.email||'');
     if(!name) return res.status(400).json({error:'Name required'});
     const initials=name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,3);
     const existing=db.prepare('SELECT * FROM consultants WHERE name=?').get(name);
-    if(existing){ db.prepare('UPDATE consultants SET active=1 WHERE id=?').run(existing.id); return res.json({...existing,active:true}); }
+    if(existing){
+      db.prepare('UPDATE consultants SET active=1,email=? WHERE id=?').run(email,existing.id);
+      return res.json({...existing,active:true,email});
+    }
     const id=newId('c');
-    db.prepare('INSERT INTO consultants (id,name,initials,active,createdAt) VALUES (?,?,?,1,?)').run(id,name,initials,now());
+    db.prepare('INSERT INTO consultants (id,name,initials,email,active,createdAt) VALUES (?,?,?,?,1,?)').run(id,name,initials,email,now());
     res.status(201).json(db.prepare('SELECT * FROM consultants WHERE id=?').get(id));
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/consultants/:id',requireAuth,requireRole('admin','scheduler','office_staff'),(req,res)=>{
+  try {
+    const c=db.prepare('SELECT * FROM consultants WHERE id=?').get(req.params.id);
+    if(!c) return res.status(404).json({error:'Not found'});
+    const name=sanitize(req.body.name||'')||c.name;
+    const email=sanitize(req.body.email||'')||c.email||'';
+    const initials=name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,3);
+    db.prepare('UPDATE consultants SET name=?,initials=?,email=? WHERE id=?').run(name,initials,email,req.params.id);
+    res.json(db.prepare('SELECT * FROM consultants WHERE id=?').get(req.params.id));
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
@@ -632,7 +712,10 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       j.startDateApproval||'pending',j.consultantId||null,
       j.backlogCategory||'regular',now(),req.params.id
     );
-    res.json(parseJob(db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id)));
+    const updated=parseJob(db.prepare('SELECT * FROM jobs WHERE id=?').get(req.params.id));
+    // Fire tearoff notification if date changed
+    fireZapierTearoff(updated, ep.tearoffDate||null);
+    res.json(updated);
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
@@ -743,9 +826,9 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
       if(Array.isArray(consultants)){
         consultants.forEach(c=>{
           db.prepare(`INSERT OR REPLACE INTO consultants
-            (id,name,initials,active,createdAt)
-            VALUES (?,?,?,?,?)`).run(
-            c.id,c.name,c.initials||'',c.active?1:0,c.createdAt||now()
+            (id,name,initials,email,active,createdAt)
+            VALUES (?,?,?,?,?,?)`).run(
+            c.id,c.name,c.initials||'',c.email||'',c.active?1:0,c.createdAt||now()
           );
           imported.consultants++;
         });
