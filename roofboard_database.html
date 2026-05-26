@@ -274,6 +274,7 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
             <div class="rc-add-panel" id="rc-add-panel">
               <div class="rc-add-row">
                 <input type="text" class="rc-add-input" id="rc-new-name" placeholder="Full name e.g. Mike Rodriguez" onkeydown="if(event.key==='Enter')addConsultant()">
+                <input type="text" class="rc-add-input" id="rc-new-email" placeholder="email@losgatosroofing.com" onkeydown="if(event.key==='Enter')addConsultant()">
                 <button class="rc-add-btn" onclick="addConsultant()">Add</button>
                 <button class="rc-add-btn" style="background:#888;" onclick="cancelRC()">✕</button>
               </div>
@@ -529,6 +530,17 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
       <div class="d-sec">Job details</div>
       <div class="d-field"><div class="d-lbl">Address</div><div class="d-val" id="d-addr"></div></div>
       <div class="d-field"><div class="d-lbl">Roofing Consultant</div><div class="d-val" id="d-rc"></div></div>
+      <div class="d-field" id="d-rc-email-field">
+        <div class="d-lbl">RC Email <span id="d-rc-email-edit-btn" style="color:#185FA5;cursor:pointer;font-size:10px;margin-left:6px;" onclick="toggleRCEmailEdit()">✎ Edit</span></div>
+        <div class="d-val" id="d-rc-email"></div>
+        <div id="d-rc-email-edit" style="display:none;margin-top:4px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="email" class="fi" id="d-rc-email-input" placeholder="email@losgatosroofing.com" style="font-size:13px;padding:7px 10px;flex:1;">
+            <button onclick="saveRCEmail()" style="padding:7px 12px;border-radius:7px;background:#185FA5;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;white-space:nowrap;">Save</button>
+          </div>
+          <div id="d-rc-email-saved" style="font-size:11px;color:#1D9E75;font-weight:600;margin-top:4px;display:none;">✓ Email saved</div>
+        </div>
+      </div>
       <div class="d-field"><div class="d-lbl">Category</div><div class="d-val" id="d-category"></div></div>
       <div class="d-sec">Roof details</div>
       <div class="d-field"><div class="d-lbl">New roof</div><div class="d-val" id="d-new-roof"></div></div>
@@ -786,10 +798,12 @@ function populateConsultantDropdown(selId,selectedId){
   const a=document.createElement('option');a.value='__add__';a.textContent='＋ Add new Roofing Consultant…';sel.appendChild(a);
 }
 function handleRCChange(val){if(val==='__add__'){document.getElementById('rc-add-panel').classList.add('open');document.getElementById('rc-new-name').focus();document.getElementById('f-consultant').value='';}else{document.getElementById('rc-add-panel').classList.remove('open');}}
-function cancelRC(){document.getElementById('rc-add-panel').classList.remove('open');document.getElementById('rc-new-name').value='';}
+function cancelRC(){document.getElementById('rc-add-panel').classList.remove('open');document.getElementById('rc-new-name').value='';document.getElementById('rc-new-email').value='';}
 async function addConsultant(){
-  const name=document.getElementById('rc-new-name').value.trim();if(!name)return;
-  try{const r=await authFetch('POST','/api/consultants',{name});const data=await r.json();if(!r.ok){alert(data.error||'Failed');return;}consultants.push(data);consultants.sort((a,b)=>a.name.localeCompare(b.name));populateConsultantDropdown('f-consultant',data.id);document.getElementById('f-consultant').value=data.id;cancelRC();}catch(e){alert('Failed: '+e.message);}
+  const name=document.getElementById('rc-new-name').value.trim();
+  const email=document.getElementById('rc-new-email').value.trim();
+  if(!name)return;
+  try{const r=await authFetch('POST','/api/consultants',{name,email});const data=await r.json();if(!r.ok){alert(data.error||'Failed');return;}consultants.push(data);consultants.sort((a,b)=>a.name.localeCompare(b.name));populateConsultantDropdown('f-consultant',data.id);document.getElementById('f-consultant').value=data.id;cancelRC();}catch(e){alert('Failed: '+e.message);}
 }
 
 // ── Roof material dropdown ────────────────────────────────────
@@ -1019,6 +1033,21 @@ async function openDrawer(id){
 
   document.getElementById('d-addr').textContent=j.address||'—';
   document.getElementById('d-rc').textContent=rcName(j.consultantId);
+  // RC email
+  const rc=consultants.find(x=>x.id===j.consultantId);
+  const rcEmailField=document.getElementById('d-rc-email-field');
+  const rcEmailDisplay=document.getElementById('d-rc-email');
+  const rcEmailInput=document.getElementById('d-rc-email-input');
+  const rcEmailEdit=document.getElementById('d-rc-email-edit');
+  if(j.consultantId&&rc){
+    rcEmailField.style.display='flex';
+    rcEmailDisplay.textContent=rc.email||'No email on file';
+    rcEmailInput.value=rc.email||'';
+    rcEmailEdit.style.display='none';
+    document.getElementById('d-rc-email-saved').style.display='none';
+  } else {
+    rcEmailField.style.display='none';
+  }
   document.getElementById('d-category').textContent=rbCategoryLabel(j.backlogCategory);
   document.getElementById('d-new-roof').textContent=nm?nm.name:'—';
   document.getElementById('d-existing-roof').textContent=em?em.name:'—';
@@ -1192,6 +1221,28 @@ async function doImport(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function maybeClose(e,id){if(e.target===document.getElementById(id))closeModal(id);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeModal('job-modal');closeModal('import-modal');}});
+
+// ── RC Email editing ──────────────────────────────────────────
+function toggleRCEmailEdit(){
+  const edit=document.getElementById('d-rc-email-edit');
+  edit.style.display=edit.style.display==='none'?'block':'none';
+}
+async function saveRCEmail(){
+  if(!did)return;
+  const j=jobs.find(x=>x.id===did); if(!j||!j.consultantId)return;
+  const email=document.getElementById('d-rc-email-input').value.trim();
+  try{
+    const r=await authFetch('PATCH',`/api/consultants/${j.consultantId}`,{email});
+    if(!r.ok){const d=await r.json();alert(d.error||'Failed');return;}
+    // Update local consultants array
+    const idx=consultants.findIndex(x=>x.id===j.consultantId);
+    if(idx!==-1) consultants[idx].email=email;
+    document.getElementById('d-rc-email').textContent=email||'No email on file';
+    document.getElementById('d-rc-email-edit').style.display='none';
+    const c=document.getElementById('d-rc-email-saved');c.style.display='block';
+    setTimeout(()=>c.style.display='none',2500);
+  }catch(e){if(e.message!=='Unauth')alert('Failed: '+e.message);}
+}
 
 // ── Logout ────────────────────────────────────────────────────
 function logout(){
