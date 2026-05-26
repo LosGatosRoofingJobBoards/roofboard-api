@@ -530,7 +530,7 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
       <div class="d-sec">Job details</div>
       <div class="d-field"><div class="d-lbl">Address</div><div class="d-val" id="d-addr"></div></div>
       <div class="d-field"><div class="d-lbl">Roofing Consultant</div><div class="d-val" id="d-rc"></div></div>
-      <div class="d-field" id="d-rc-email-field">
+      <div class="d-field" id="d-rc-email-field" style="display:none;">
         <div class="d-lbl">RC Email <span id="d-rc-email-edit-btn" style="color:#185FA5;cursor:pointer;font-size:10px;margin-left:6px;" onclick="toggleRCEmailEdit()">✎ Edit</span></div>
         <div class="d-val" id="d-rc-email"></div>
         <div id="d-rc-email-edit" style="display:none;margin-top:4px;">
@@ -1040,7 +1040,7 @@ async function openDrawer(id){
   const rcEmailInput=document.getElementById('d-rc-email-input');
   const rcEmailEdit=document.getElementById('d-rc-email-edit');
   if(j.consultantId&&rc){
-    rcEmailField.style.display='flex';
+    rcEmailField.style.display='block';
     rcEmailDisplay.textContent=rc.email||'No email on file';
     rcEmailInput.value=rc.email||'';
     rcEmailEdit.style.display='none';
