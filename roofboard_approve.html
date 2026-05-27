@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RoofBoard — Job Confirmation</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="roofboard_config.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.card { background: #fff; border-radius: 14px; border: 0.5px solid #e0e0e0; padding: 36px 32px; width: 100%; max-width: 440px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); text-align: center; }
+.logo { font-size: 20px; font-weight: 700; color: #111; letter-spacing: -0.5px; margin-bottom: 24px; }
+.logo span { color: #185FA5; }
+.icon { font-size: 56px; margin-bottom: 16px; line-height: 1; }
+.title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { font-size: 14px; color: #888; margin-bottom: 24px; line-height: 1.6; }
+.job-card { background: #f8f8f5; border-radius: 10px; border: 0.5px solid #e4e4e0; padding: 16px 18px; margin-bottom: 24px; text-align: left; }
+.job-field { margin-bottom: 8px; }
+.job-field:last-child { margin-bottom: 0; }
+.job-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.job-value { font-size: 14px; color: #222; font-weight: 500; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 24px; border-radius: 9px; font-size: 14px; font-weight: 600; font-family: inherit; border: none; cursor: pointer; text-decoration: none; width: 100%; margin-bottom: 10px; }
+.btn-success { background: #1D9E75; color: #fff; }
+.btn-ghost { background: #f0f0ec; color: #444; border: 0.5px solid #ccc; }
+.spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid #e0e0e0; border-top-color: #185FA5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-card { background: #FEF0E6; border-radius: 10px; padding: 16px; color: #894020; font-size: 14px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Roof<span>Board</span></div>
+
+  <!-- Loading state -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <div class="title">Processing…</div>
+    <div class="subtitle">Please wait while we update your job.</div>
+  </div>
+
+  <!-- Success state -->
+  <div id="state-success" style="display:none;">
+    <div class="icon">✓</div>
+    <div class="title" id="success-title"></div>
+    <div class="subtitle" id="success-subtitle"></div>
+    <div class="job-card" id="success-job-card"></div>
+    <div class="subtitle" style="font-size:12px;color:#aaa;">You can close this window.</div>
+  </div>
+
+  <!-- Already used state -->
+  <div id="state-used" style="display:none;">
+    <div class="icon" style="color:#F0A500;">⚠</div>
+    <div class="title">Link Already Used</div>
+    <div class="subtitle">This confirmation link has already been used. The job status has been updated.</div>
+    <div class="subtitle" style="font-size:12px;color:#aaa;">You can close this window.</div>
+  </div>
+
+  <!-- Error state -->
+  <div id="state-error" style="display:none;">
+    <div class="icon" style="color:#D85A30;">✗</div>
+    <div class="title">Link Invalid</div>
+    <div class="error-card" id="error-msg"></div>
+    <div style="margin-top:16px;">
+      <a href="roofboard_login.html" class="btn btn-ghost">
+        <i class="ti ti-login"></i> Go to RoofBoard
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+async function processApproval(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const action = params.get('action');
+
+  if(!token){
+    showError('No approval token found in this link. Please use the link from your email.');
+    return;
+  }
+
+  try {
+    const r = await fetch(RB_API+'/api/approve?token='+encodeURIComponent(token));
+    const data = await r.json();
+
+    if(r.status === 409){
+      // Already used
+      showState('used');
+      return;
+    }
+
+    if(!r.ok){
+      showError(data.error || 'This link is invalid or has expired.');
+      return;
+    }
+
+    // Success
+    const isConfirm = data.action === 'confirm';
+    document.getElementById('success-title').textContent = isConfirm ? '✓ Job Confirmed' : '✗ Job Marked Not Approved';
+    document.getElementById('success-subtitle').textContent = isConfirm
+      ? 'Thank you — the scheduling team has been notified that you\'ve confirmed this job.'
+      : 'The scheduling team has been notified.';
+
+    document.getElementById('success-job-card').innerHTML = `
+      <div class="job-field"><div class="job-label">Job #</div><div class="job-value">${data.jobNum||'—'}</div></div>
+      <div class="job-field"><div class="job-label">Customer</div><div class="job-value">${data.customer||'—'}</div></div>
+      <div class="job-field"><div class="job-label">Address</div><div class="job-value">${data.address||'—'}</div></div>
+    `;
+
+    // Green for confirm, orange for not approved
+    document.querySelector('.icon').textContent = isConfirm ? '✓' : '✗';
+    document.querySelector('.icon').style.color = isConfirm ? '#1D9E75' : '#D85A30';
+    if(isConfirm){
+      document.querySelector('.card').style.borderColor = '#1D9E75';
+    }
+
+    showState('success');
+  } catch(e){
+    showError('Could not connect to the server. Please try again or contact the office.');
+  }
+}
+
+function showState(state){
+  ['loading','success','used','error'].forEach(s=>{
+    document.getElementById('state-'+s).style.display = s===state ? 'block' : 'none';
+  });
+}
+
+function showError(msg){
+  document.getElementById('error-msg').textContent = msg;
+  showState('error');
+}
+
+processApproval();
+</script>
+</body>
+</html>

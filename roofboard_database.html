@@ -201,6 +201,9 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
     <option value="regular">Regular</option>
     <option value="on_hold">On Hold</option>
   </select>
+  <select class="flt" id="f-rc" onchange="applyFilter()" style="display:none;">
+    <option value="">All Consultants</option>
+  </select>
   <div class="stat-pills" id="stats"></div>
 </div>
 
@@ -651,6 +654,13 @@ async function loadRefData(){
     populateTypeFilter();
     populateCrewSelects();
     populateRFCrewSelect();
+    // Populate RC filter for admin/scheduler
+    if(['admin','scheduler','office_staff'].includes(userRole)){
+      const rcSel=document.getElementById('f-rc');
+      rcSel.style.display='block';
+      rcSel.innerHTML='<option value="">All Consultants</option>';
+      consultants.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;rcSel.appendChild(o);});
+    }
   } catch(e){ console.error('Failed to load ref data',e); }
 }
 
@@ -700,10 +710,21 @@ function applyFilter(){
   const q=(document.getElementById('q').value||'').toLowerCase();
   const ft=document.getElementById('f-type').value;
   const fb=document.getElementById('f-backlog').value;
+  const frc=document.getElementById('f-rc').value;
+
+  // RC role always sees only their own jobs
+  let rcFilter=frc;
+  if(isSales){
+    // Find this user's consultant ID by matching username/name
+    const myRC=consultants.find(c=>c.name.toLowerCase()===getName().toLowerCase());
+    if(myRC) rcFilter=myRC.id;
+  }
+
   filtered=jobs.filter(j=>{
     if(q&&!`${j.jobNum} ${j.customer} ${j.address}`.toLowerCase().includes(q))return false;
     if(ft&&j.newRoofMaterialId!==ft)return false;
     if(fb&&j.backlogCategory!==fb)return false;
+    if(rcFilter&&j.consultantId!==rcFilter)return false;
     return true;
   });
   filtered.sort((a,b)=>{ let av=a[sf]||'',bv=b[sf]||''; if(typeof av==='string')av=av.toLowerCase(); if(typeof bv==='string')bv=bv.toLowerCase(); return av<bv?-sd:av>bv?sd:0; });
@@ -1263,8 +1284,38 @@ function initUI(){
 }
 
 const token=getToken(),expires=localStorage.getItem('rb_expires');
-if(!token||!expires||new Date(expires)<=new Date()) window.location.href='roofboard_login.html';
-else{initUI();loadRefData().then(()=>loadJobs());}
+if(!token||!expires||new Date(expires)<=new Date()){
+  // Preserve redirect params through login
+  const params=new URLSearchParams(window.location.search);
+  const jobId=params.get('job');
+  const action=params.get('action');
+  if(jobId){
+    sessionStorage.setItem('rb_redirect_job',jobId);
+    sessionStorage.setItem('rb_redirect_action',action||'');
+  }
+  window.location.href='roofboard_login.html';
+} else {
+  initUI();
+  loadRefData().then(()=>loadJobs().then(()=>{
+    // Handle redirect from Not Approved email link
+    const jobId=sessionStorage.getItem('rb_redirect_job');
+    const action=sessionStorage.getItem('rb_redirect_action');
+    if(jobId){
+      sessionStorage.removeItem('rb_redirect_job');
+      sessionStorage.removeItem('rb_redirect_action');
+      // Set approval if action specified
+      if(action==='not_approved'){
+        setTimeout(async()=>{
+          await authFetch('PATCH',`/api/jobs/${jobId}`,{startDateApproval:'not_approved'});
+          await loadJobs();
+          openDrawer(jobId);
+        },500);
+      } else {
+        setTimeout(()=>openDrawer(jobId),500);
+      }
+    }
+  }));
+}
 </script>
 </body>
 </html>

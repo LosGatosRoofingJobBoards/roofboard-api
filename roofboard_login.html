@@ -78,6 +78,14 @@ async function doLogin(){
     localStorage.setItem('rb_role',data.role);
     localStorage.setItem('rb_name',data.fullName||data.username);
     localStorage.setItem('rb_expires',data.expiresAt);
+    // Check for job redirect params in URL
+    const params=new URLSearchParams(window.location.search);
+    const jobId=params.get('job');
+    const action=params.get('action');
+    if(jobId){
+      sessionStorage.setItem('rb_redirect_job',jobId);
+      sessionStorage.setItem('rb_redirect_action',action||'');
+    }
     if(data.mustChangePwd){
       document.getElementById('login-form').style.display='none';
       document.getElementById('change-pwd-form').style.display='block';
