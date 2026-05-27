@@ -168,6 +168,15 @@ db.exec(`
     expiresAt TEXT NOT NULL,
     createdAt TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS approval_tokens (
+    token     TEXT PRIMARY KEY,
+    jobId     TEXT NOT NULL,
+    action    TEXT NOT NULL,
+    expiresAt TEXT NOT NULL,
+    usedAt    TEXT,
+    createdAt TEXT NOT NULL
+  );
 `);
 
 // ── Seed default roof materials ───────────────────────────────
@@ -275,43 +284,68 @@ try {
 
 // ── Zapier webhook ────────────────────────────────────────────
 const ZAPIER_WEBHOOK_URL = process.env.ZAPIER_WEBHOOK_URL || '';
+const NETLIFY_URL = process.env.NETLIFY_URL || 'https://lgr-roofboards.netlify.app';
+
+function generateApprovalToken(jobId, action) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
+  db.prepare(`INSERT INTO approval_tokens (token,jobId,action,expiresAt,createdAt)
+    VALUES (?,?,?,?,?)`).run(token, jobId, action, expiresAt.toISOString(), now());
+  return token;
+}
 
 function fireZapierTearoff(job, previousTearoffDate){
-  if(!ZAPIER_WEBHOOK_URL) return; // Not configured
-  if(!job.consultantId) return;   // No RC assigned
+  if(!ZAPIER_WEBHOOK_URL) return;
+  if(!job.consultantId) return;
 
   const newDate = job.tearoffDate || null;
   const oldDate = previousTearoffDate || null;
 
-  // Determine event type
   let eventType;
   if(!oldDate && newDate)       eventType = 'scheduled';
   else if(oldDate && !newDate)  eventType = 'withdrawn';
   else if(oldDate && newDate && oldDate !== newDate) eventType = 'rescheduled';
-  else return; // No change to tearoff date — do nothing
+  else return;
 
-  // Get RC details
   const consultant = db.prepare('SELECT * FROM consultants WHERE id=?').get(job.consultantId);
-  if(!consultant || !consultant.email) return; // No email on file
+  if(!consultant || !consultant.email) return;
 
-  // Format date nicely
   function fmtDate(d){
     if(!d) return '';
     const dt = new Date(d+'T00:00:00');
     return dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   }
 
-  // Build subject line
+  // Generate confirm token (one-click, no login)
+  const confirmToken = generateApprovalToken(job.id, 'confirm');
+  const confirmLink = `${NETLIFY_URL}/roofboard_approve.html?token=${confirmToken}&action=confirm`;
+
+  // Not approved link goes to login then opens job drawer
+  const notApprovedLink = `${NETLIFY_URL}/roofboard_login.html?redirect=roofboard_database.html&job=${job.id}&action=not_approved`;
+
   const subjects = {
     scheduled:   `Job Scheduled — ${job.jobNum} ${job.customer}`,
     rescheduled: `Job Rescheduled — ${job.jobNum} ${job.customer}`,
     withdrawn:   `Job Removed from Schedule — ${job.jobNum} ${job.customer}`,
   };
 
-  // Build email body
+  const dateBlock = newDate ? `Tear-off Date: ${fmtDate(newDate)}\n` : '';
+
+  const actionBlock = eventType !== 'withdrawn' ? `
+Please confirm or flag this job:
+
+✓ CONFIRM this job:
+${confirmLink}
+
+✗ NOT APPROVED / Need to discuss:
+${notApprovedLink}
+(Requires login — you can leave a note and update the schedule preference)
+` : '';
+
   const bodies = {
-    scheduled:   `Hi ${consultant.name},\n\nYour job has been scheduled for tear-off.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\nTear-off Date: ${fmtDate(newDate)}\n\n— Los Gatos Roofing`,
-    rescheduled: `Hi ${consultant.name},\n\nYour job's tear-off date has been updated.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\nNew Tear-off Date: ${fmtDate(newDate)}\n\n— Los Gatos Roofing`,
+    scheduled:   `Hi ${consultant.name},\n\nYour job has been scheduled for tear-off.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\n${dateBlock}${actionBlock}\n— Los Gatos Roofing`,
+    rescheduled: `Hi ${consultant.name},\n\nYour job's tear-off date has been updated.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\n${dateBlock}${actionBlock}\n— Los Gatos Roofing`,
     withdrawn:   `Hi ${consultant.name},\n\nYour job has been removed from the tear-off schedule.\n\nJob #: ${job.jobNum}\nCustomer: ${job.customer}\nAddress: ${job.address}\n\n— Los Gatos Roofing`,
   };
 
@@ -325,9 +359,10 @@ function fireZapierTearoff(job, previousTearoffDate){
     customer:    job.customer,
     address:     job.address,
     tearoffDate: newDate ? fmtDate(newDate) : '',
+    confirmLink,
+    notApprovedLink,
   };
 
-  // Fire and forget — don't block the response
   fetch(ZAPIER_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -898,6 +933,38 @@ app.post('/api/import',requireAuth,requireRole('admin'),(req,res)=>{
     })();
 
     res.json({ok:true,imported});
+  } catch(e){ res.status(500).json({error:e.message}); }
+});
+
+// ── Approval token endpoints (public — no auth required) ──────
+
+// GET /api/approve?token=xxx — validate token and update job approval
+app.get('/api/approve',(req,res)=>{
+  try {
+    const {token} = req.query;
+    if(!token) return res.status(400).json({error:'Token required'});
+
+    const rec = db.prepare('SELECT * FROM approval_tokens WHERE token=?').get(token);
+    if(!rec) return res.status(404).json({error:'Invalid or expired link'});
+    if(new Date(rec.expiresAt) < new Date()) return res.status(410).json({error:'This link has expired'});
+    if(rec.usedAt) return res.status(409).json({error:'This link has already been used', action: rec.action});
+
+    const job = db.prepare('SELECT * FROM jobs WHERE id=?').get(rec.jobId);
+    if(!job) return res.status(404).json({error:'Job not found'});
+
+    // Mark token as used
+    db.prepare('UPDATE approval_tokens SET usedAt=? WHERE token=?').run(now(), token);
+
+    // Update job approval
+    db.prepare('UPDATE jobs SET startDateApproval=?,updatedAt=? WHERE id=?').run(rec.action, now(), rec.jobId);
+
+    res.json({
+      ok: true,
+      action: rec.action,
+      jobNum: job.jobNum,
+      customer: job.customer,
+      address: job.address,
+    });
   } catch(e){ res.status(500).json({error:e.message}); }
 });
 
