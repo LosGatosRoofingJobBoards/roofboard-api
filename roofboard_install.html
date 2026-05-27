@@ -142,6 +142,13 @@ select.rc-filter { padding: 5px 10px; border: 0.5px solid #d0d0cc; border-radius
     <div class="modal-field"><div class="modal-label"><i class="ti ti-ruler-2" style="font-size:12px"></i> Squares</div><div class="modal-value" id="m-squares"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-tag" style="font-size:12px"></i> Product</div><div class="modal-value" id="m-product"></div></div>
     <div class="modal-field"><div class="modal-label"><i class="ti ti-notes" style="font-size:12px"></i> Installer Notes</div><div class="modal-value" id="m-notes"></div></div>
+    <div class="gutter-section" id="m-delivery-section" style="display:none;background:#EAF2FB;">
+      <div class="gutter-section-title" style="color:#185FA5;"><i class="ti ti-truck-delivery" style="font-size:11px"></i> Material Delivery</div>
+      <div class="modal-field" style="margin-bottom:6px;"><div class="modal-label">Company</div><div class="modal-value" id="m-delivery-company"></div></div>
+      <div class="modal-field" id="m-delivery1-f" style="margin-bottom:6px;display:none;"><div class="modal-label">Delivery 1</div><div class="modal-value" id="m-delivery1"></div></div>
+      <div class="modal-field" id="m-delivery2-f" style="margin-bottom:6px;display:none;"><div class="modal-label">Delivery 2</div><div class="modal-value" id="m-delivery2"></div></div>
+      <div class="modal-field" id="m-delivery3-f" style="margin-bottom:0;display:none;"><div class="modal-label">Delivery 3</div><div class="modal-value" id="m-delivery3"></div></div>
+    </div>
     <div class="gutter-section" id="m-gutter-section" style="display:none">
       <div class="gutter-section-title"><i class="ti ti-droplet" style="font-size:11px"></i> Gutters included</div>
       <div class="modal-field" style="margin-bottom:0"><div class="modal-label">Gutter materials</div><div class="modal-value" id="m-gutter-mat"></div></div>
@@ -331,6 +338,18 @@ async function openJob(id){
   const productParts=[job.manufacturer,job.productName,job.color].filter(Boolean);
   document.getElementById('m-product').textContent=productParts.length?productParts.join(' '):'—';
   document.getElementById('m-notes').textContent=job.installerNotes||job.notes||'—';
+  // Delivery section
+  const ds=document.getElementById('m-delivery-section');
+  if(job.deliveryCompany||job.delivery1||job.delivery2||job.delivery3){
+    ds.style.display='block';
+    document.getElementById('m-delivery-company').textContent=job.deliveryCompany||'—';
+    const d1f=document.getElementById('m-delivery1-f'),d2f=document.getElementById('m-delivery2-f'),d3f=document.getElementById('m-delivery3-f');
+    if(job.delivery1){d1f.style.display='block';document.getElementById('m-delivery1').textContent=job.delivery1;}else d1f.style.display='none';
+    if(job.delivery2){d2f.style.display='block';document.getElementById('m-delivery2').textContent=job.delivery2;}else d2f.style.display='none';
+    if(job.delivery3){d3f.style.display='block';document.getElementById('m-delivery3').textContent=job.delivery3;}else d3f.style.display='none';
+  } else {
+    ds.style.display='none';
+  }
   const gs=document.getElementById('m-gutter-section');
   if(job.includesGutters){gs.style.display='block';document.getElementById('m-gutter-mat').textContent=job.gutterMaterials||'—';}
   else gs.style.display='none';

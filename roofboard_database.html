@@ -438,6 +438,26 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
         <div class="form-group"><label class="lbl">Gutter Materials</label><input type="text" class="fi" id="f-gmat" placeholder="80ft, 4 downspouts…"></div>
       </div>
 
+      <div class="sec-div sec-blue"><i class="ti ti-truck-delivery" style="font-size:11px"></i> Material Delivery</div>
+      <div class="form-group full">
+        <label class="lbl">Delivery Company</label>
+        <input type="text" class="fi" id="f-delivery-company" placeholder="e.g. ABC Roofing Supply">
+      </div>
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="lbl">Delivery 1</label>
+          <input type="text" class="fi" id="f-delivery1" placeholder="e.g. Mon June 2, 7am">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Delivery 2</label>
+          <input type="text" class="fi" id="f-delivery2" placeholder="e.g. Tue June 3, noon">
+        </div>
+        <div class="form-group">
+          <label class="lbl">Delivery 3</label>
+          <input type="text" class="fi" id="f-delivery3" placeholder="e.g. Wed June 4, 8am">
+        </div>
+      </div>
+
       <div class="sec-div sec-purple"><i class="ti ti-toggle-right" style="font-size:11px"></i> Flags</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <label class="check-row"><input type="checkbox" id="f-steep"> ⚠ Steep pitch — 7:12 or greater</label>
@@ -558,6 +578,11 @@ textarea.fi { resize: vertical; min-height: 56px; font-size: 13px; }
       <div class="d-field"><div class="d-lbl">Installer Notes</div><div class="d-val" id="d-installer-notes"></div></div>
       <div class="d-field"><div class="d-lbl">Tear-off Notes</div><div class="d-val" id="d-tearoff-notes"></div></div>
       <div class="d-field"><div class="d-lbl">Gutter Notes</div><div class="d-val" id="d-gutter-notes"></div></div>
+      <div class="d-sec">Material Delivery</div>
+      <div class="d-field"><div class="d-lbl">Delivery Company</div><div class="d-val" id="d-delivery-company"></div></div>
+      <div class="d-field"><div class="d-lbl">Delivery 1</div><div class="d-val" id="d-delivery1"></div></div>
+      <div class="d-field"><div class="d-lbl">Delivery 2</div><div class="d-val" id="d-delivery2"></div></div>
+      <div class="d-field"><div class="d-lbl">Delivery 3</div><div class="d-val" id="d-delivery3"></div></div>
       <div class="d-sec">Gutter details</div>
       <div class="d-field"><div class="d-lbl">Profile &amp; material</div><div class="d-val" id="d-gprofile"></div></div>
       <div class="d-field" id="d-gscreen-f" style="display:none;"><div class="d-lbl">Screen</div><div class="d-val" id="d-gscreen"></div></div>
@@ -864,7 +889,7 @@ function changeFormLayerCount(dir){
 // ── Add / Edit ────────────────────────────────────────────────
 function clearForm(){
   document.getElementById('eid').value='';
-  ['f-num','f-cust','f-addr','f-mat','f-gscreen','f-gmat','f-existing-notes','f-squares','f-manufacturer','f-productname','f-color','f-installer-notes','f-tearoff-notes','f-gutter-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-num','f-cust','f-addr','f-mat','f-gscreen','f-gmat','f-existing-notes','f-squares','f-manufacturer','f-productname','f-color','f-installer-notes','f-tearoff-notes','f-gutter-notes','f-delivery-company','f-delivery1','f-delivery2','f-delivery3'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-backlog-cat').value='regular';
   document.getElementById('f-approval').value='pending';
   document.getElementById('f-gprofile').value='';
@@ -918,6 +943,10 @@ function openEdit(id){
   document.getElementById('f-installer-notes').value=j.installerNotes||'';
   document.getElementById('f-tearoff-notes').value=j.tearoffNotes||'';
   document.getElementById('f-gutter-notes').value=j.gutterNotes||'';
+  document.getElementById('f-delivery-company').value=j.deliveryCompany||'';
+  document.getElementById('f-delivery1').value=j.delivery1||'';
+  document.getElementById('f-delivery2').value=j.delivery2||'';
+  document.getElementById('f-delivery3').value=j.delivery3||'';
   document.getElementById('f-gprofile').value=j.gutterProfile||'';
   document.getElementById('f-gmaterial').value=j.gutterMaterial||'';
   document.getElementById('f-ginstr').value=j.gutterInstruction||'na';
@@ -979,6 +1008,10 @@ async function saveJob(){
     installerNotes:document.getElementById('f-installer-notes').value.trim(),
     tearoffNotes:document.getElementById('f-tearoff-notes').value.trim(),
     gutterNotes:document.getElementById('f-gutter-notes').value.trim(),
+    deliveryCompany:document.getElementById('f-delivery-company').value.trim(),
+    delivery1:document.getElementById('f-delivery1').value.trim(),
+    delivery2:document.getElementById('f-delivery2').value.trim(),
+    delivery3:document.getElementById('f-delivery3').value.trim(),
     includesGutters:document.getElementById('f-incgutters').checked,
     warranty:document.getElementById('f-warranty').checked,
     reroofComplete:document.getElementById('f-rfcomplete').checked,
@@ -1085,6 +1118,10 @@ async function openDrawer(id){
   document.getElementById('d-installer-notes').textContent=j.installerNotes||j.notes||'—';
   document.getElementById('d-tearoff-notes').textContent=j.tearoffNotes||'—';
   document.getElementById('d-gutter-notes').textContent=j.gutterNotes||'—';
+  document.getElementById('d-delivery-company').textContent=j.deliveryCompany||'—';
+  document.getElementById('d-delivery1').textContent=j.delivery1||'—';
+  document.getElementById('d-delivery2').textContent=j.delivery2||'—';
+  document.getElementById('d-delivery3').textContent=j.delivery3||'—';
   const gp=GUTTER_PROFILES[j.gutterProfile], gm=GUTTER_MATERIALS_MAP[j.gutterMaterial];
   document.getElementById('d-gprofile').textContent=[gp?gp.label:'',gm?gm.label:''].filter(Boolean).join(' · ')||'—';
   const gsf=document.getElementById('d-gscreen-f');
