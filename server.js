@@ -61,7 +61,8 @@ function sanitize(val) {
 function sanitizeJob(j) {
   const fields = ['jobNum','customer','address','materials','gutterMaterials',
     'notes','gutterScreen','existingRoofNotes','squares','manufacturer',
-    'productName','color','installerNotes','tearoffNotes','gutterNotes'];
+    'productName','color','installerNotes','tearoffNotes','gutterNotes',
+    'deliveryCompany','delivery1','delivery2','delivery3'];
   const out = {...j};
   fields.forEach(f => { if(out[f]) out[f] = sanitize(out[f]); });
   return out;
@@ -245,13 +246,17 @@ function parseJob(row){
 
 // ── Migration: add new fields (safe to run multiple times) ───
 const newCols = [
-  ['squares',        'TEXT DEFAULT \'\''],
-  ['manufacturer',   'TEXT DEFAULT \'\''],
-  ['productName',    'TEXT DEFAULT \'\''],
-  ['color',          'TEXT DEFAULT \'\''],
-  ['installerNotes', 'TEXT DEFAULT \'\''],
-  ['tearoffNotes',   'TEXT DEFAULT \'\''],
-  ['gutterNotes',    'TEXT DEFAULT \'\''],
+  ['squares',          'TEXT DEFAULT \'\''],
+  ['manufacturer',     'TEXT DEFAULT \'\''],
+  ['productName',      'TEXT DEFAULT \'\''],
+  ['color',            'TEXT DEFAULT \'\''],
+  ['installerNotes',   'TEXT DEFAULT \'\''],
+  ['tearoffNotes',     'TEXT DEFAULT \'\''],
+  ['gutterNotes',      'TEXT DEFAULT \'\''],
+  ['deliveryCompany',  'TEXT DEFAULT \'\''],
+  ['delivery1',        'TEXT DEFAULT \'\''],
+  ['delivery2',        'TEXT DEFAULT \'\''],
+  ['delivery3',        'TEXT DEFAULT \'\''],
 ];
 newCols.forEach(([col, def]) => {
   try { db.exec(`ALTER TABLE jobs ADD COLUMN ${col} ${def}`); } catch(e) {}
@@ -663,8 +668,9 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
       gutterProfile,gutterMaterial,gutterScreen,gutterInstruction,gutterMaterials,
       includesGutters,reroofComplete,warranty,layerStack,materials,notes,
       squares,manufacturer,productName,color,installerNotes,tearoffNotes,gutterNotes,
+      deliveryCompany,delivery1,delivery2,delivery3,
       startDateApproval,consultantId,backlogCategory,archived,createdAt,updatedAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`).run(
       id,j.jobNum,j.customer,j.address||'',
       j.newRoofMaterialId||null,j.existingRoofMaterialId||null,
       j.existingDeckType||'',j.newDeckType||'',j.existingRoofNotes||'',
@@ -678,6 +684,7 @@ app.post('/api/jobs',requireAuth,(req,res)=>{
       JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
       j.squares||'',j.manufacturer||'',j.productName||'',j.color||'',
       j.installerNotes||'',j.tearoffNotes||'',j.gutterNotes||'',
+      j.deliveryCompany||'',j.delivery1||'',j.delivery2||'',j.delivery3||'',
       j.startDateApproval||'pending',j.consultantId||null,
       j.backlogCategory||'regular',ts,ts
     );
@@ -729,6 +736,7 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       gutterProfile=?,gutterMaterial=?,gutterScreen=?,gutterInstruction=?,gutterMaterials=?,
       includesGutters=?,reroofComplete=?,warranty=?,layerStack=?,materials=?,notes=?,
       squares=?,manufacturer=?,productName=?,color=?,installerNotes=?,tearoffNotes=?,gutterNotes=?,
+      deliveryCompany=?,delivery1=?,delivery2=?,delivery3=?,
       startDateApproval=?,consultantId=?,backlogCategory=?,updatedAt=?
     WHERE id=?`).run(
       j.jobNum,j.customer,j.address||'',
@@ -744,6 +752,7 @@ app.patch('/api/jobs/:id',requireAuth,(req,res)=>{
       JSON.stringify(j.layerStack||[]),j.materials||'',j.notes||'',
       j.squares||'',j.manufacturer||'',j.productName||'',j.color||'',
       j.installerNotes||'',j.tearoffNotes||'',j.gutterNotes||'',
+      j.deliveryCompany||'',j.delivery1||'',j.delivery2||'',j.delivery3||'',
       j.startDateApproval||'pending',j.consultantId||null,
       j.backlogCategory||'regular',now(),req.params.id
     );
