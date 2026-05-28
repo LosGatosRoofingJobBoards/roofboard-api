@@ -323,7 +323,7 @@ function fireZapierTearoff(job, previousTearoffDate){
   }
 
   // Generate confirm token (one-click, no login)
-  const confirmToken = generateApprovalToken(job.id, 'confirm');
+  const confirmToken = generateApprovalToken(job.id, 'confirmed');
   const confirmLink = `${NETLIFY_URL}/roofboard_approve.html?token=${confirmToken}&action=confirm`;
 
   // Not approved link goes to login then opens job drawer
@@ -964,8 +964,12 @@ app.get('/api/approve',(req,res)=>{
     // Mark token as used
     db.prepare('UPDATE approval_tokens SET usedAt=? WHERE token=?').run(now(), token);
 
+    // Map action to approval status value
+    const statusMap = { confirm: 'confirmed', not_approved: 'not_approved' };
+    const approvalStatus = statusMap[rec.action] || rec.action;
+
     // Update job approval
-    db.prepare('UPDATE jobs SET startDateApproval=?,updatedAt=? WHERE id=?').run(rec.action, now(), rec.jobId);
+    db.prepare('UPDATE jobs SET startDateApproval=?,updatedAt=? WHERE id=?').run(approvalStatus, now(), rec.jobId);
 
     res.json({
       ok: true,
